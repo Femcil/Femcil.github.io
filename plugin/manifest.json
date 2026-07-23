@@ -4,8 +4,11 @@
     "authors": [
         {
             "name": "Femcil",
-            "id": "282563339233853441"
+            "id": "1002047938358431774"
         }
     ],
+    "vendetta": {
+        "icon": "ic_progress_wrench_24px"
+    },
     "main": "src/index.tsx",
 }
