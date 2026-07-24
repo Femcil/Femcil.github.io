@@ -1,0 +1,15 @@
+{
+    "name":"Falling Cherry Leaves",
+    "description":"Render Falling cherry leaves on the screen",
+    "authors":[
+        {
+            "name":"Femcil",
+            "id":"1002047938358431774"
+        }
+    ],
+    "vendetta":{
+        "icon":"ic_progress_wrench_24px"
+    },
+    "main":"index.js",
+    "hash":"d0c4194dc280239dfa4b51d69d2dd50912e2c4fbad9429f79c432dda800bcfe5"
+}
