@@ -1,0 +1,211 @@
+:root {
+  --bg-color: #0b0c16;       /* Deep space dark purple/blue */
+  --card-bg: #141627;        /* Medium dark card container */
+  --card-hover: #1c1f36;     /* Card highlight state */
+  --text-main: #e0e4fc;      /* Soft light blue/white body text */
+  --text-dim: #9aa1c6;       /* Muted purple-grey text */
+  --accent-pink: #ff7bb0;    /* Celestial pink accent */
+  --accent-blue: #64b5f6;    /* Bright light blue accent */
+  --accent-purple: #b388ff;  /* Light purple highlight */
+  --border-color: #272a48;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+body {
+  overflow: hidden;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Navbar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 32px;
+  background: rgba(20, 22, 39, 0.8);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-brand {
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: var(--accent-pink);
+}
+
+.nav-links a {
+  color: var(--text-main);
+  text-decoration: none;
+  margin-left: 20px;
+  font-size: 0.95rem;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover, .nav-links a.active {
+  color: var(--accent-blue);
+}
+
+.nav-links .nav-discord {
+  background-color: #5865f2;
+  padding: 6px 14px;
+  border-radius: 6px;
+  color: #fff !important;
+}
+
+.disabled-link {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Hero Section */
+.hero-card {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 40px;
+  margin: 20px 0 30px 0;
+}
+
+.avatar-placeholder {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-pink), var(--accent-purple), var(--accent-blue));
+  border: 3px solid var(--accent-pink);
+}
+
+.hero-content h1 {
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.highlight {
+  color: var(--accent-pink);
+}
+
+.hero-content p {
+  color: var(--text-dim);
+  max-width: 600px;
+  margin-bottom: 20px;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.btn-primary {
+  background-color: var(--accent-pink);
+  color: #0b0c16;
+}
+
+.btn-secondary {
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+
+/* Hub Grid */
+.grid-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.hub-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 24px;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s, border-color 0.2s, background-color 0.2s;
+}
+
+.hub-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent-purple);
+  background-color: var(--card-hover);
+}
+
+.card-tag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent-blue);
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.tag-toy { color: var(--accent-pink); }
+.tag-soon { color: var(--text-dim); }
+
+.hub-card h3 {
+  font-size: 1.25rem;
+  margin-bottom: 8px;
+}
+
+.hub-card p {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  flex-grow: 1;
+  margin-bottom: 16px;
+}
+
+.card-link {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--accent-purple);
+}
+
+.disabled-card {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 40px 0;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  border-top: 1px solid var(--border-color);
+  margin-top: 40px;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 600px) {
+  .hero-card {
+    flex-direction: column;
+    text-align: center;
+  }
+}

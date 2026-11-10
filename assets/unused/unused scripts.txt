@@ -1,0 +1,211 @@
+<!-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #0d0d0d;
+            color: #fff;
+        }
+
+        header {
+            background: #111;
+            padding: 20px;
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            border-bottom: 2px solid #222;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .hero h1 {
+            font-size: 42px;
+            margin-bottom: 10px;
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: #ccc;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-top: 50px;
+            font-size: 26px;
+            font-weight: bold;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        .card {
+            background: #141414;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #222;
+            text-align: center;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+
+        .card:hover {
+            background: #1f1f1f;
+            transform: translateY(-3px);
+        }
+
+        .card h3 {
+            margin: 10px 0;
+        }
+
+        .socials {
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .socials a {
+            margin: 0 10px;
+            color: #4db8ff;
+            font-size: 18px;
+            text-decoration: none;
+        }
+
+        .socials a:hover {
+            text-decoration: underline;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #777;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+
+<body>
+    <script src="WebSocket.js"></script>
+    <header>Justin's Hub</header>
+
+    <div class="hero">
+        <h1>Welcome</h1>
+        <p>Your central hub for socials, lore, games, and account access.</p>
+    </div>
+
+    <!-- Navigation Cards -->
+    <div class="section-title">Explore</div>
+    <div class="grid">
+
+        <a href="./account/login.html" style="text-decoration:none; color:inherit;">
+            <div class="card">
+                <h3>Account</h3>
+                <p>Login, register, or manage your settings.</p>
+            </div>
+        </a>
+
+        <a href="./characters/index.html" style="text-decoration:none; color:inherit;">
+            <div class="card">
+                <h3>Character Lore</h3>
+                <p>Dive into your universe and its stories.</p>
+            </div>
+        </a>
+
+        <a href="./games/index.html" style="text-decoration:none; color:inherit;">
+            <div class="card">
+                <h3>Games</h3>
+                <p>Play and track your progress across all titles.</p>
+            </div>
+        </a>
+
+        <a href="https://your-social-link-here" style="text-decoration:none; color:inherit;">
+            <div class="card">
+                <h3>Socials</h3>
+                <p>Connect with me across platforms.</p>
+            </div>
+        </a>
+
+    </div>
+
+    <!-- Social Links -->
+    <div class="socials">
+        <a href="https://youtube.com/@Femcil">YouTube</a>
+        <a href="https://tiktok.com/@femcil2">TikTok</a>
+        <a href="https://discord.gg/r4cr3Kz58t">Discord</a>
+        <a href="https://twitter.com">Twitter</a>
+    </div>
+
+    <footer>
+        © 2026 Femcil — All Rights Reserved
+    </footer>
+
+</body>
+</html>
+
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+<title>Femcil</title>
+
+<script src="./themes/theme.js"></script>
+
+</head>
+
+<body>
+
+<header>
+
+<h1>Femcil</h1>
+
+<nav>
+<a href="./index.html">Home</a>
+<a href="./characters/index.html">Characters</a>
+<a href="./games/index.html">Games</a>
+<a href="./account/login.html">Login</a>
+</nav>
+
+</header>
+
+<main>
+
+<h2>Welcome</h2>
+<p>Main homepage</p>
+
+</main>
+
+<footer>
+
+<button onclick="setTheme('darkgrey')">Dark</button>
+<button onclick="setTheme('dragon')">Dragon</button>
+<button onclick="setTheme('random')">Random</button>
+
+</footer>
+
+<script>
+
+function setTheme(theme){
+localStorage.setItem("site-theme",theme);
+location.reload();
+}
+
+</script>
+
+</body>
+</html>

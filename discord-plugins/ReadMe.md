@@ -1,0 +1,1 @@
+Ignore this folder in the github if you arent interested in Discord Client Plugins and are only interested in the site itself.

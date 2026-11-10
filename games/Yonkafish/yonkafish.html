@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yonkagor Fishing Game | Celestial Hub</title>
+  <link rel="stylesheet" href="../../assets/css/game-catalog.css">
+  <style>
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      margin-top: 10px;
+    }
+
+    .back-link {
+      color: var(--accent-pink);
+      text-decoration: none;
+      font-size: 0.9rem;
+      align-self: flex-start;
+      margin-bottom: 5px;
+      display: inline-block;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+
+    .canvas-wrapper {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    canvas {
+      display: block;
+      background: #0b0c16;
+    }
+
+    .game-stats {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 800px;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      color: var(--text-dim);
+    }
+
+    .game-stats span {
+      color: var(--accent-pink);
+      font-weight: 700;
+    }
+
+    .controls-hint {
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="../../home.html" class="nav-brand">CELESTIAL</a>
+    <div class="nav-links">
+      <!--<a href="#account" class="disabled-link">Account</a>-->
+      <a href="https://discord.gg/qXJ9h7DNfs" target="_blank" class="nav-discord">Discord</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <a href="../catalog.html" class="back-link">&larr; Back to Game Catalog</a>
+    
+    <div class="game-container">
+      <div class="game-stats">
+        <div>Score: <span id="score">0</span> <button onclick="localStorage.removeItem('yonka_fish_score'); score=0; document.getElementById('score').textContent=0;" style="background:none; border:1px solid var(--border-color); color:var(--text-dim); padding:2px 6px; border-radius:4px; cursor:pointer; font-size:0.75rem; margin-left:8px;">Reset Data</button></div>
+        <div id="status-text">Status: Press SPACE or CLICK to Cast!</div>
+      </div>
+
+      <div class="canvas-wrapper">
+        <canvas id="fishCanvas" width="800" height="450"></canvas>
+      </div>
+
+      <div class="controls-hint">
+        <strong>Controls:</strong> [SPACE / Click] Cast Line &bull; [W / Up Arrow] Lift Rod &bull; [A/D or Left/Right Arrow] Move Rod (gives slight lift)
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Femcil &bull; Hosted on GitHub Pages</p>
+  </footer>
+
+<script>
+  const canvas = document.getElementById('fishCanvas');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const statusEl = document.getElementById('status-text');
+
+  let score = parseInt(localStorage.getItem('yonka_fish_score')) || 0;
+  if (scoreEl) scoreEl.textContent = score;
+
+  // WORLD BOUNDARIES & CAMERA
+  const WORLD_WIDTH = 800;
+  const WORLD_HEIGHT = 3800; // Deep sea depth!
+  const waterLevel = 160;
+
+  const camera = { x: 0, y: 0 };
+
+  // Player & Rod State
+  const rodTip = { x: 180, y: 120, defaultX: 180, defaultY: 120 };
+  const playerSquare = { x: 80, y: 130, width: 40, height: 50 };
+
+  // Bobber / Hook State
+  const hook = {
+    x: rodTip.x,
+    y: rodTip.y,
+    vx: 0,
+    vy: 0,
+    isCasted: false,
+    hookedFish: null,
+    isReelingIn: false
+  };
+
+  let hasEnteredWater = false;
+  let waveTimer = 0;
+
+  // Controls
+  const keys = {};
+  window.addEventListener('keydown', (e) => {
+    keys[e.key] = true;
+    if (e.code === 'Space') {
+      e.preventDefault();
+      toggleCast();
+    }
+  });
+  window.addEventListener('keyup', (e) => { keys[e.key] = false; });
+  canvas.addEventListener('click', toggleCast);
+
+  // Deep Sea Fish Ecosystem (Mapped by specific depth zones)
+  const fishTypes = [
+    { name: 'Stardust Minnow', width: 16, height: 10, speed: 1.6, points: 10, minDepth: waterLevel + 40, maxDepth: 450, color: '#ff7bb0' },
+    { name: 'Nebula Perch', width: 26, height: 15, speed: 1.1, points: 25, minDepth: 450, maxDepth: 850, color: '#7b95ff' },
+    { name: 'Void Carp', width: 40, height: 22, speed: 0.7, points: 50, minDepth: 850, maxDepth: 1300, color: '#b57bff' },
+    { name: 'Abyssal Leviathan', width: 55, height: 30, speed: 0.4, points: 150, minDepth: 1300, maxDepth: WORLD_HEIGHT - 60, color: '#ff3b6b' }
+  ];
+
+  const fishList = [];
+  function spawnFish() {
+    if (fishList.length < 12) { // Higher fish density for deep water
+      const template = fishTypes[Math.floor(Math.random() * fishTypes.length)];
+      const direction = Math.random() < 0.5 ? 1 : -1;
+      
+      fishList.push({
+        name: template.name,
+        x: direction === 1 ? 150 : WORLD_WIDTH + 50,
+        y: template.minDepth + Math.random() * (template.maxDepth - template.minDepth),
+        vx: direction * template.speed,
+        width: template.width,
+        height: template.height,
+        points: template.points,
+        color: template.color
+      });
+    }
+  }
+
+  function toggleCast() {
+    if (!hook.isCasted && !hook.isReelingIn) {
+      hook.isCasted = true;
+      hasEnteredWater = false;
+      hook.x = rodTip.x;
+      hook.y = rodTip.y;
+      hook.vx = 7.5;
+      hook.vy = -2.5;
+      statusEl.textContent = 'Status: Line casted! Descending...';
+    }
+  }
+
+  function resetHook() {
+    hook.isCasted = false;
+    hook.isReelingIn = false;
+    hook.hookedFish = null;
+    hasEnteredWater = false;
+    hook.vx = 0;
+    hook.vy = 0;
+    hook.x = rodTip.x;
+    hook.y = rodTip.y;
+  }
+
+  function update() {
+    waveTimer += 0.05;
+    const controlsAllowed = !hook.isCasted || hasEnteredWater;
+
+    // 1. Rod Tip Controls
+    if (controlsAllowed) {
+      if (keys['w'] || keys['W'] || keys['ArrowUp']) {
+        rodTip.y = Math.max(60, rodTip.y - 2);
+      } else {
+        rodTip.y = Math.min(rodTip.defaultY, rodTip.y + 1);
+      }
+
+      if (keys['a'] || keys['A'] || keys['ArrowLeft']) {
+        rodTip.x = Math.max(120, rodTip.x - 2);
+        rodTip.y = Math.max(60, rodTip.y - 0.8);
+      } else if (keys['d'] || keys['D'] || keys['ArrowRight']) {
+        rodTip.x = Math.min(260, rodTip.x + 2);
+        rodTip.y = Math.max(60, rodTip.y - 0.8);
+      } else {
+        rodTip.x += (rodTip.defaultX - rodTip.x) * 0.05;
+      }
+    } else {
+      rodTip.x += (rodTip.defaultX - rodTip.x) * 0.1;
+      rodTip.y += (rodTip.defaultY - rodTip.y) * 0.1;
+    }
+
+    // 2. Reel Animation & Physics
+    if (hook.isReelingIn) {
+      hook.x += (rodTip.x - hook.x) * 0.12; // Smooth pull to surface
+      hook.y += (rodTip.y - hook.y) * 0.12;
+
+      if (hook.hookedFish) {
+        hook.hookedFish.x = hook.x - hook.hookedFish.width / 2;
+        hook.hookedFish.y = hook.y - hook.hookedFish.height / 2;
+      }
+
+      const dist = Math.hypot(rodTip.x - hook.x, rodTip.y - hook.y);
+      if (dist < 8) {
+        if (hook.hookedFish) {
+          score += hook.hookedFish.points;
+          if (scoreEl) scoreEl.textContent = score;
+          localStorage.setItem('yonka_fish_score', score);
+          statusEl.textContent = `Status: Caught a ${hook.hookedFish.name}! (+${hook.hookedFish.points} pts)`;
+          
+          const index = fishList.indexOf(hook.hookedFish);
+          if (index > -1) fishList.splice(index, 1);
+        }
+        resetHook();
+      }
+    } else if (hook.isCasted) {
+      if (hook.y < waterLevel) {
+        hook.vy += 0.3;
+      } else {
+        hook.vy += 0.04;
+        hook.vx *= 0.96;
+        hook.vy *= 0.96;
+        if (!hasEnteredWater) {
+          hasEnteredWater = true;
+          statusEl.textContent = 'Status: Deep diving active. Steer hook into the abyss!';
+        }
+      }
+
+      if (hasEnteredWater) {
+        if (keys['w'] || keys['W'] || keys['ArrowUp']) hook.vy -= 0.55;
+        if (keys['a'] || keys['A'] || keys['ArrowLeft']) { hook.vx -= 0.35; hook.vy -= 0.15; }
+        if (keys['d'] || keys['D'] || keys['ArrowRight']) { hook.vx += 0.35; hook.vy -= 0.15; }
+      }
+
+      hook.x += hook.vx;
+      hook.y += hook.vy;
+
+      if (hook.y < waterLevel && hasEnteredWater) {
+        if (hook.hookedFish) {
+          hook.isReelingIn = true;
+          statusEl.textContent = `Status: Reeling up ${hook.hookedFish.name}...`;
+        } else {
+          statusEl.textContent = 'Status: Line reeled back in.';
+          resetHook();
+        }
+      }
+
+      if (hook.x < 140 && hook.y > waterLevel - 20) {
+        hook.x = 140;
+        hook.vx = -hook.vx * 0.5;
+      }
+
+      if (hook.x > WORLD_WIDTH - 10) hook.x = WORLD_WIDTH - 10;
+      if (hook.y > WORLD_HEIGHT - 10) hook.y = WORLD_HEIGHT - 10;
+    } else {
+      hook.x = rodTip.x;
+      hook.y = rodTip.y;
+    }
+
+    // 3. Dynamic Camera Scroll Interpolation
+    let targetCamY = 0;
+    if (hook.isCasted || hook.isReelingIn) {
+      // Keep hook centered vertically in the viewport, clamp camera inside world limits
+      targetCamY = hook.y - canvas.height / 2;
+    } else {
+      targetCamY = 0; // Return to surface view at rest
+    }
+    targetCamY = Math.max(0, Math.min(WORLD_HEIGHT - canvas.height, targetCamY));
+    camera.y += (targetCamY - camera.y) * 0.08; // Smooth camera lerp tracking
+
+    // 4. Fish Logic
+    spawnFish();
+    for (let i = fishList.length - 1; i >= 0; i--) {
+      const fish = fishList[i];
+
+      if (hook.isCasted && fish === hook.hookedFish) {
+        fish.x = hook.x - fish.width / 2;
+        fish.y = hook.y - fish.height / 2;
+      } else {
+        fish.x += fish.vx;
+
+        if (fish.x < 140) {
+          fish.x = 140;
+          fish.vx = -fish.vx;
+        }
+
+        if (hook.isCasted && !hook.hookedFish && hook.y >= waterLevel) {
+          if (
+            hook.x > fish.x &&
+            hook.x < fish.x + fish.width &&
+            hook.y > fish.y &&
+            hook.y < fish.y + fish.height
+          ) {
+            hook.hookedFish = fish;
+            statusEl.textContent = `Status: BITE! (${fish.name}) - Reel back to surface!`;
+          }
+        }
+      }
+
+      if (fish.x > WORLD_WIDTH + 100) {
+        if (hook.hookedFish === fish) hook.hookedFish = null;
+        fishList.splice(i, 1);
+      }
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Save context state for camera transform offset
+    ctx.save();
+    ctx.translate(0, -Math.floor(camera.y));
+
+    // Sky
+    ctx.fillStyle = '#141627';
+    ctx.fillRect(0, 0, WORLD_WIDTH, waterLevel);
+
+    // Deep Sea Gradient (Darkens progressively toward the bottom abyss)
+    const waterGrad = ctx.createLinearGradient(0, waterLevel, 0, WORLD_HEIGHT);
+    waterGrad.addColorStop(0, '#0b0c16');
+    waterGrad.addColorStop(0.4, '#060710');
+    waterGrad.addColorStop(1, '#010103');
+    ctx.fillStyle = waterGrad;
+    ctx.fillRect(0, waterLevel, WORLD_WIDTH, WORLD_HEIGHT - waterLevel);
+
+    // Animated Water Surface Line
+    ctx.strokeStyle = '#3b3f6b';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let x = 0; x <= WORLD_WIDTH; x += 15) {
+      const y = waterLevel + Math.sin(x * 0.04 + waveTimer) * 3;
+      if (x === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Pier Ledge extending down into the abyss wall
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, waterLevel - 20, 140, WORLD_HEIGHT - waterLevel + 20);
+
+    // Player Block
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(playerSquare.x, playerSquare.y, playerSquare.width, playerSquare.height);
+
+    // Fishing Rod
+    ctx.strokeStyle = '#ff7bb0';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(playerSquare.x + playerSquare.width, playerSquare.y + 10);
+    ctx.lineTo(rodTip.x, rodTip.y);
+    ctx.stroke();
+
+    // Fishing Line
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(rodTip.x, rodTip.y);
+    ctx.lineTo(hook.x, hook.y);
+    ctx.stroke();
+
+    // Hook / Bobber
+    ctx.fillStyle = hook.hookedFish ? '#ff7bb0' : '#ffffff';
+    ctx.fillRect(hook.x - 4, hook.y - 4, 8, 8);
+
+    // Render Fish Entities
+    fishList.forEach(fish => {
+      ctx.fillStyle = fish === hook.hookedFish ? '#ff7bb0' : '#1b1e36';
+      ctx.fillRect(fish.x, fish.y, fish.width, fish.height);
+
+      ctx.strokeStyle = fish === hook.hookedFish ? '#ffffff' : fish.color;
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(fish.x, fish.y, fish.width, fish.height);
+    });
+
+    ctx.restore(); // Restore context to screen bounds
+
+    // Viewport HUD Depth Indicator Overlay
+    const depthMeters = Math.max(0, Math.floor((hook.y - waterLevel) / 10));
+    ctx.fillStyle = 'rgba(11, 12, 22, 0.7)';
+    ctx.fillRect(canvas.width - 130, 12, 118, 28);
+    ctx.strokeStyle = '#272a48';
+    ctx.strokeRect(canvas.width - 130, 12, 118, 28);
+    ctx.fillStyle = '#ff7bb0';
+    ctx.font = '700 12px monospace';
+    ctx.fillText(`DEPTH: ${depthMeters}m`, canvas.width - 120, 30);
+  }
+
+  function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  loop();
+</script>
+</body>
+</html>

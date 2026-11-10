@@ -1,0 +1,369 @@
+:root {
+  --bg-color: #0b0c16;       
+  --card-bg: #141627;        
+  --card-hover: #1c1f36;     
+  --text-main: #e0e4fc;      
+  --text-dim: #9aa1c6;       
+  --accent-pink: #ff7bb0;    
+  --accent-blue: #64b5f6;    
+  --accent-purple: #b388ff;  
+  --border-color: #272a48;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Sticky Footer Flexbox Structure */
+html, body {
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  line-height: 1.6;
+}
+
+/* Navbar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 32px;
+  background: rgba(20, 22, 39, 0.8);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  flex-shrink: 0;
+}
+
+.nav-brand {
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: var(--accent-pink);
+  text-decoration: none;
+}
+
+.nav-links a {
+  color: var(--text-main);
+  text-decoration: none;
+  margin-left: 20px;
+  font-size: 0.95rem;
+  transition: color 0.2s;
+}
+
+.nav-links .nav-discord {
+  background-color: #5865f2;
+  padding: 6px 14px;
+  border-radius: 6px;
+  color: #fff !important;
+}
+
+.disabled-link {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Wiki Layout Container */
+.wiki-wrapper {
+  flex: 1 0 auto;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 30px 20px;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 30px;
+}
+
+/* Sidebar Navigation */
+.wiki-sidebar {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 24px;
+  height: fit-content;
+  position: sticky;
+  top: 90px;
+}
+
+/* Profile Picture (PFP) Styling */
+.wiki-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.wiki-pfp {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--accent-pink);
+}
+
+.wiki-profile-info h4 {
+  font-size: 1rem;
+  color: var(--text-main);
+}
+
+.wiki-profile-info span {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.wiki-sidebar h3 {
+  font-size: 1rem;
+  letter-spacing: 1px;
+  color: var(--accent-blue);
+  margin-bottom: 16px;
+  text-transform: uppercase;
+}
+
+.wiki-nav-list {
+  list-style: none;
+}
+
+.wiki-nav-list li {
+  margin-bottom: 10px;
+}
+
+.wiki-nav-list a {
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 0.95rem;
+  display: block;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.wiki-nav-list a:hover, .wiki-nav-list a.active-wiki-link {
+  color: var(--text-main);
+  background-color: var(--card-hover);
+  border-left: 3px solid var(--accent-pink);
+}
+
+/* Main Large Content Card */
+.wiki-main-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 40px;
+  min-width: 0; /* Prevents grid child from blowing out parent width */
+  overflow: hidden;
+}
+
+.wiki-header {
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 20px;
+  margin-bottom: 24px;
+}
+
+.card-tag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent-blue);
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+  display: inline-block;
+}
+
+.tag-toy { color: var(--accent-pink); }
+
+.wiki-header h1 {
+  font-size: 2rem;
+  color: var(--text-main);
+  margin-bottom: 8px;
+}
+
+.wiki-subtitle {
+  color: var(--text-dim);
+  font-size: 1rem;
+}
+
+.wiki-content p {
+  margin-bottom: 16px;
+  color: var(--text-main);
+}
+
+.wiki-content h3 {
+  color: var(--accent-purple);
+  margin-top: 24px;
+  margin-bottom: 12px;
+  font-size: 1.25rem;
+}
+
+/* Scroll-Through Image Gallery Port (Fixed Width Containment) */
+.wiki-image-gallery {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 12px 4px 16px 4px;
+  margin: 20px 0;
+  scroll-snap-type: x mandatory;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.wiki-image-gallery::-webkit-scrollbar {
+  height: 8px;
+}
+
+.gallery-card {
+  flex: 0 1 180px; /* Allows it to shrink if needed, but prevents it from growing */
+  min-width: 150px;
+  max-width: 180px; /* Locks the ceiling so 1 image doesn't stretch across the screen */
+  background-color: var(--card-hover);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.gallery-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent-blue);
+}
+
+.gallery-card img {
+  width: 100%;
+  height: 130px;
+  object-fit: cover;
+  display: block;
+  cursor: pointer;
+}
+
+.gallery-card p {
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  text-align: center;
+  margin: 0 !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Full 100% View Modal Lightbox */
+.wiki-lightbox-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(11, 12, 22, 0.9);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+}
+
+.wiki-lightbox-modal.active {
+  display: flex;
+}
+
+.wiki-lightbox-content {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.wiki-lightbox-close {
+  position: absolute;
+  top: 25px;
+  right: 35px;
+  color: var(--text-main);
+  font-size: 2.5rem;
+  font-weight: 300;
+  cursor: pointer;
+  background: none;
+  border: none;
+  transition: color 0.2s;
+}
+
+.wiki-lightbox-close:hover {
+  color: var(--accent-pink);
+}
+
+/* Clickable Redirect Links inside text */
+.wiki-link {
+  color: var(--accent-pink);
+  text-decoration: none;
+  font-weight: 500;
+  border-bottom: 1px dotted var(--accent-pink);
+  transition: opacity 0.2s;
+}
+
+.wiki-link:hover {
+  opacity: 0.8;
+  border-bottom-style: solid;
+}
+
+/* Footer */
+footer {
+  flex-shrink: 0;
+  text-align: center;
+  padding: 40px 0;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  border-top: 1px solid var(--border-color);
+  margin-top: auto;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-color);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-pink);
+}
+
+/* Responsive collapse for mobile */
+@media (max-width: 768px) {
+  .wiki-wrapper {
+    grid-template-columns: 1fr;
+  }
+  .wiki-sidebar {
+    position: static;
+  }
+}
+
+/* Hide all wiki articles by default */ 
+.wiki-article {
+  display: none;
+}
+
+/* Show only the active article */
+.wiki-article.active-article {
+  display: block;
+}
