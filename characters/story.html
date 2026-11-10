@@ -9,17 +9,28 @@
 <body>
   <!-- Navigation -->
   <nav class="navbar">
-    <a href="../home.html" class="nav-brand">CELESTIAL</a>
+    <div class="nav-left">
+      <!-- Mobile Hamburger Toggle -->
+      <button class="mobile-menu-toggle" id="menuToggle" aria-label="Toggle Wiki Navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <a href="../home.html" class="nav-brand">CELESTIAL</a>
+    </div>
     <div class="nav-links">
       <!--<a href="#account" class="disabled-link">Account</a>-->
       <a href="https://discord.gg/qXJ9h7DNfs" target="_blank" class="nav-discord">Discord</a>
     </div>
   </nav>
 
+  <!-- Backdrop Overlay for Mobile Drawer -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
   <!-- Main Wiki Layout Container -->
   <div class="wiki-wrapper">
     <!-- Sidebar Navigation -->
-    <aside class="wiki-sidebar">
+    <aside class="wiki-sidebar" id="wikiSidebar">
 
       <!--<div class="wiki-profile">
         <img src="YOUR_PFP_IMAGE_URL_OR_PATH" alt="Profile" class="wiki-pfp">
@@ -415,11 +426,27 @@
     <p>&copy; 2026 Femcil &bull; Hosted on GitHub Pages</p>
   </footer>
 
-  <!-- Simple Tab-Swapping Script -->
+  <!-- Simple Tab-Swapping & Drawer Script -->
   <script>
   document.addEventListener('DOMContentLoaded', () => {
     const tabs = document.querySelectorAll('.wiki-tab, .inline-tab');
     const articles = document.querySelectorAll('.wiki-article');
+    const menuToggle = document.getElementById('menuToggle');
+    const wikiSidebar = document.getElementById('wikiSidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    function toggleSidebar() {
+      wikiSidebar.classList.toggle('active');
+      sidebarOverlay.classList.toggle('active');
+    }
+
+    function closeSidebar() {
+      wikiSidebar.classList.remove('active');
+      sidebarOverlay.classList.remove('active');
+    }
+
+    if (menuToggle) menuToggle.addEventListener('click', toggleSidebar);
+    if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
 
     function activateArticle(targetId) {
       // Hide all articles
@@ -474,6 +501,11 @@
         
         // Update URL hash cleanly without jumping
         history.pushState(null, null, `#${targetId}`);
+
+        // Auto-close mobile drawer when selecting a tab on smaller screens
+        if (window.innerWidth <= 768) {
+          closeSidebar();
+        }
       });
     });
 
@@ -491,7 +523,6 @@
   const lightboxImg = document.getElementById('lightboxImg');
   const lightboxClose = document.querySelector('.wiki-lightbox-close');
 
-  // Select all gallery images (or any wiki content images you want clickable)
   document.querySelectorAll('.gallery-card img').forEach(img => {
     img.addEventListener('click', () => {
       lightbox.classList.add('active');
@@ -504,12 +535,14 @@
     lightboxImg.src = '';
   }
 
-  lightboxClose.addEventListener('click', closeLightbox);
-  lightbox.addEventListener('click', (e) => {
-    if (e.target === lightbox) {
-      closeLightbox();
-    }
-  });
+  if (lightboxClose) lightboxClose.addEventListener('click', closeLightbox);
+  if (lightbox) {
+    lightbox.addEventListener('click', (e) => {
+      if (e.target === lightbox) {
+        closeLightbox();
+      }
+    });
+  }
 
   // Close on Escape key press
   document.addEventListener('keydown', (e) => {

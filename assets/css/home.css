@@ -18,7 +18,7 @@
 }
 
 body {
-  overflow: hidden;
+  overflow: auto;
   background-color: var(--bg-color);
   color: var(--text-main);
   line-height: 1.6;
@@ -207,5 +207,13 @@ footer {
   .hero-card {
     flex-direction: column;
     text-align: center;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Target any game card class you use, e.g., .game-card, .project-card, etc. */
+  .mobile-disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
   }
 }

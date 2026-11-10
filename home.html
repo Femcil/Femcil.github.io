@@ -37,7 +37,7 @@
     <section class="grid-section">
       
       <!-- Card 1: Games -->
-      <a href="./games/catalog.html" class="hub-card">
+      <a href="./games/catalog.html" class="hub-card mobile-disabled">
         <div class="card-tag">SHOWCASE</div>
         <h3>Games</h3>
         <p>Explore custom browser web toys.</p>
@@ -90,6 +90,25 @@
   <footer>
     <p>&copy; 2026 Femcil &bull; Hosted on GitHub Pages</p>
   </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const disabledCard = document.querySelector('.hub-card.mobile-disabled');
+  
+      if (disabledCard) {
+        const link = disabledCard.querySelector('a'); // Or if the card itself is wrapped in an <a> tag
+    
+        disabledCard.addEventListener('click', (e) => {
+          // Check if it's a mobile screen width (<= 768px)
+          if (window.innerWidth <= 768) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+          }
+        });
+      }
+    });
+  </script>
 
 </body>
 </html>
