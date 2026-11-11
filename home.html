@@ -27,7 +27,7 @@
         <h1>Welcome to <span class="highlight">Femcil</span>'s site</h1>
         <p>I make unlocked games, art, and in progress, world/lore building</p>
         <div class="hero-buttons">
-          <a href="./games/catalog.html" class="btn btn-primary mobile-disabled">Explore Games</a>
+          <a href="./games/catalog.html" class="btn btn-primary">Explore Games</a>
           <a href="https://discord.gg/qXJ9h7DNfs" target="_blank" class="btn btn-secondary">Join Discord</a>
         </div>
       </div>
@@ -37,10 +37,10 @@
     <section class="grid-section">
       
       <!-- Card 1: Games -->
-      <a href="./games/catalog.html" class="hub-card mobile-disabled">
+      <a href="./games/catalog.html" class="hub-card">
         <div class="card-tag">SHOWCASE</div>
         <h3>Games</h3>
-        <p>Explore custom browser web toys.</p>
+        <p>Explore custom browser web toys. Not all work for mobile.</p>
         <span class="card-link">View Games &rarr;</span>
       </a>
 
@@ -57,7 +57,7 @@
         <div class="card-tag">Socials</div>
         <h3>Media Portal</h3>
         <p>Discord, Twitch, Twitter, Reddit, Spotify, Tiktok, and Instagram all here!</p>
-        <span class="card-link">Links &rarr;</span>
+        <span class="card-link">Offline</span>
       </a>
 
       <!-- Card 4: Account (Future Server Feature) -->
@@ -93,11 +93,12 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // Select ALL elements with the class, not just the first one
-      const disabledCards = document.querySelectorAll('.mobile-disabled');
+      const disabledCard = document.querySelector('.hub-card.mobile-disabled');
   
-      disabledCards.forEach(card => {
-        card.addEventListener('click', (e) => {
+      if (disabledCard) {
+        const link = disabledCard.querySelector('a'); // Or if the card itself is wrapped in an <a> tag
+    
+        disabledCard.addEventListener('click', (e) => {
           // Check if it's a mobile screen width (<= 768px)
           if (window.innerWidth <= 768) {
             e.preventDefault();
@@ -105,7 +106,7 @@
             return false;
           }
         });
-      });
+      }
     });
   </script>
 

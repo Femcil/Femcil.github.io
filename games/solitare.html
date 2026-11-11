@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solitaire | Celestial Hub</title>
+  <link rel="stylesheet" href="../assets/css/game-catalog.css">
+  <style>
+    /* Game-only styles. Colors inherit from game-catalog.css; change the accent here to match exactly. */
+    :root { --hub-accent: #8b7cff; }
+    .disabled-link { opacity: .45; cursor: not-allowed; pointer-events: none; }
+
+    .sol { max-width: 1100px; margin: 0 auto; }
+    .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin: 0 0 8px; }
+    .sol h1 { margin: 0; font-size: 1.4rem; }
+    .sol .grp { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .sol select, .sol button { font: inherit; font-size: .9rem; color: inherit; cursor: pointer; padding: 6px 12px; border-radius: 6px;
+      background: rgba(127,127,127,.16); border: 1px solid rgba(127,127,127,.5); }
+    .sol select option { color: #111; }
+    .sol button:hover { background: rgba(127,127,127,.3); }
+    .sol button:disabled { opacity: .4; cursor: default; }
+    .sol button.primary { background: var(--hub-accent); border-color: var(--hub-accent); color: #fff; font-weight: 700; }
+    .sol .stat b { color: var(--hub-accent); }
+    #msg { min-height: 24px; font-size: .95rem; opacity: .9; margin: 0 0 8px; }
+
+    #felt { padding: 12px; border-radius: 12px; background: rgba(0,0,0,.28); border: 1px solid rgba(127,127,127,.35); min-height: 320px; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+    .row { display: grid; grid-template-columns: repeat(var(--cols), var(--cw)); gap: var(--g); justify-content: center; align-items: start; margin-bottom: 16px; }
+    .pile { position: relative; width: var(--cw); grid-row: 1; }
+    .pile::before { content: ""; position: absolute; left: 0; top: 0; width: 100%; height: var(--ch); border: 2px dashed rgba(127,127,127,.55); border-radius: 6px; box-sizing: border-box; }
+    .pile.hint::before { border: 2px solid #ff9800; }
+    .pile[data-k]::after { content: attr(data-k); position: absolute; left: 0; right: 0; top: var(--ch); text-align: center; font-size: .75rem; opacity: .75; }
+    .pyr { position: relative; margin: 0 auto; }
+    .pp { position: absolute; }
+    .pp::before { display: none; }
+    .pp.e { pointer-events: none; }
+
+    .sc { position: absolute; left: 0; width: var(--cw); height: var(--ch); box-sizing: border-box; border-radius: 6px; background: #fff;
+      border: 1px solid #888; box-shadow: 0 1px 3px rgba(0,0,0,.45); font-size: calc(var(--cw) * .27); font-weight: 700; line-height: 1; cursor: pointer; }
+    .sc.r { color: #c62828; } .sc.k { color: #111; }
+    .sc .cn { position: absolute; left: 5%; top: 5%; white-space: nowrap; }
+    .sc .cs { position: absolute; left: 0; right: 0; bottom: 12%; text-align: center; font-size: 2.2em; }
+    .sc.back { background: repeating-linear-gradient(45deg, var(--hub-accent) 0 4px, #14141f 4px 8px); border: 2px solid #fff; }
+    .sc.sel { outline: 3px solid #ffd54a; outline-offset: -1px; }
+    .sc.hint { outline: 3px solid #ff9800; outline-offset: -1px; box-shadow: 0 0 10px #ff9800; }
+
+    #overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.6); z-index: 99999; }
+    #overlay.show { display: flex; }
+    .win { background: #14141f; color: #f2f2f7; border: 1px solid var(--hub-accent); border-radius: 12px; padding: 28px 36px; text-align: center; max-width: 90vw; }
+    .win h2 { margin: 0 0 8px; font-size: 1.6rem; }
+    .win p { margin: 6px 0 18px; }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <a href="../home.html" class="nav-brand">CELESTIAL</a>
+    <div class="nav-links">
+      <a href="#account" class="disabled-link" aria-disabled="true" tabindex="-1">Account</a>
+      <a href="https://discord.gg/qXJ9h7DNfs" target="_blank" class="nav-discord">Discord</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <div class="sol">
+      <div class="bar">
+        <div class="grp">
+          <h1>Solitaire</h1>
+          <select id="mode" aria-label="Game mode">
+            <option value="klondike">Classic (Klondike)</option>
+            <option value="freecell">FreeCell</option>
+            <option value="pyramid">Pyramid</option>
+            <option value="spider1">Spider (1 suit)</option>
+            <option value="spider2">Spider (2 suits)</option>
+          </select>
+        </div>
+        <div class="grp">
+          <span class="stat">Moves <b id="moves">0</b></span>
+          <button id="bNew" class="primary">New game</button>
+          <button id="bUndo" disabled>Undo</button>
+          <button id="bHint">Hint</button>
+        </div>
+      </div>
+      <div id="msg"></div>
+      <div id="felt"><div id="board"></div></div>
+    </div>
+  </main>
+
+  <div id="overlay"><div class="win"><h2>You won!</h2><p id="winTxt"></p><button id="bAgain" class="primary">Play again</button></div></div>
+
+  <footer>
+    <p>&copy; 2026 Femcil &bull; Hosted on GitHub Pages</p>
+  </footer>
+
+<script>
+"use strict";
+var SU = ["♠","♥","♦","♣"], RK = ["","A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+var TIP = {
+  klondike: "Build down in alternating colors, send cards up to the foundations by suit. Click a card, then click where it goes. Double-click sends a card to a foundation.",
+  freecell: "Build down in alternating colors. The four cells at top-left hold one card each. How many cards you can move at once depends on your free cells and empty columns.",
+  pyramid: "Remove pairs of uncovered cards that add up to 13 (Q=12, J=11, A=1). Kings come off alone. Clear the pyramid to win.",
+  spider1: "Build down in sequence on any card. Only same-suit runs move together. Complete K to A runs to clear them. Fill every empty column before dealing.",
+  spider2: "Build down in sequence on any card. Only same-suit runs move together. Complete K to A runs to clear them. Fill every empty column before dealing."
+};
+var mode = "klondike", P = {}, sel = null, hint = null, hist = [], moves = 0, won = false;
+var CW = 60, CH = 84, UP = 20, DN = 8, GAP = 8;
+var PRC = []; for (var rr = 0; rr < 7; rr++) for (var cc = 0; cc <= rr; cc++) PRC.push([rr, cc]);
+var $ = function (i) { return document.getElementById(i); };
+
+function red(c) { return c.s === 1 || c.s === 2; }
+function shuf(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+function deck(suits, copies) {
+  var d = [];
+  for (var k = 0; k < copies; k++) suits.forEach(function (s) { for (var r = 1; r <= 13; r++) d.push({ s: s, r: r, up: false }); });
+  return shuf(d);
+}
+function getTopCard(n) { var a = P[n]; return a[a.length - 1]; }
+function idx(r, c) { return r * (r + 1) / 2 + c; }
+function say(t) { $("msg").textContent = t; }
+function snap() { hist.push(JSON.stringify([P, moves])); }
+
+/* ---------- Setup ---------- */
+function init() {
+  P = {}; sel = null; hint = null; hist = []; moves = 0; won = false;
+  $("overlay").classList.remove("show"); say(TIP[mode]);
+  var d, i, j, c;
+  if (mode === "klondike") {
+    d = deck([0,1,2,3], 1);
+    for (i = 0; i < 7; i++) { P["t" + i] = []; for (j = 0; j <= i; j++) { c = d.pop(); c.up = (j === i); P["t" + i].push(c); } }
+    for (i = 0; i < 4; i++) P["f" + i] = [];
+    P.stock = d; P.waste = [];
+  } else if (mode === "freecell") {
+    d = deck([0,1,2,3], 1);
+    for (i = 0; i < 4; i++) { P["c" + i] = []; P["f" + i] = []; }
+    for (i = 0; i < 8; i++) P["t" + i] = [];
+    d.forEach(function (c, k) { c.up = true; P["t" + (k % 8)].push(c); });
+  } else if (mode === "pyramid") {
+    d = deck([0,1,2,3], 1);
+    for (i = 0; i < 28; i++) { c = d.pop(); c.up = true; P["p" + i] = [c]; }
+    P.stock = d; P.waste = []; P.rem = [];
+  } else {
+    d = mode === "spider1" ? deck([0], 8) : deck([0,1], 4);
+    for (i = 0; i < 10; i++) {
+      P["t" + i] = [];
+      var n = i < 4 ? 6 : 5;
+      for (j = 0; j < n; j++) { c = d.pop(); c.up = (j === n - 1); P["t" + i].push(c); }
+    }
+    P.stock = d; P.done = [];
+  }
+  render();
+}
+
+/* ---------- Rules ---------- */
+function runOK(a) {
+  for (var i = 0; i < a.length - 1; i++) {
+    var x = a[i], y = a[i + 1];
+    if (x.r !== y.r + 1) return false;
+    if (mode[0] === "s") { if (x.s !== y.s) return false; }
+    else if (red(x) === red(y)) return false;
+  }
+  return true;
+}
+function pyrFree(k) {
+  var r = PRC[k][0], c = PRC[k][1];
+  return P["p" + k].length > 0 && (r === 6 || (!P["p" + idx(r + 1, c)].length && !P["p" + idx(r + 1, c + 1)].length));
+}
+function canPick(n, i) {
+  var a = P[n], c = a && a[i];
+  if (!c) return false;
+  if (mode === "pyramid") return n === "waste" ? i === a.length - 1 : (n[0] === "p" && pyrFree(+n.slice(1)));
+  if (n[0] === "t") return c.up && runOK(a.slice(i));
+  if (n === "waste" || n[0] === "c") return i === a.length - 1;
+  if (n[0] === "f") return mode === "klondike" && i === a.length - 1;
+  return false;
+}
+function cap(destEmpty) {   // FreeCell: most cards movable at once
+  var fc = 0, ec = 0;
+  for (var k in P) { if (k[0] === "c" && !P[k].length) fc++; if (k[0] === "t" && !P[k].length) ec++; }
+  if (destEmpty) ec--;
+  return (fc + 1) * Math.pow(2, Math.max(0, ec));
+}
+function canDrop(sn, si, dn) {
+  if (sn === dn || !P[dn]) return false;
+  var cs = P[sn].slice(si), c = cs[0], d = P[dn], t = d[d.length - 1];
+  if (!c) return false;
+  if (dn[0] === "t") {
+    if (mode === "freecell" && cs.length > cap(!t)) return false;
+    if (!t) return mode === "klondike" ? c.r === 13 : true;
+    if (mode[0] === "s") return t.r === c.r + 1;
+    return t.up && t.r === c.r + 1 && red(t) !== red(c);
+  }
+  if (dn[0] === "f") return cs.length === 1 && (t ? (t.s === c.s && t.r === c.r - 1) : c.r === 1);
+  if (dn[0] === "c") return cs.length === 1 && !d.length;
+  return false;
+}
+function checkRuns() {      // Spider: remove completed K..A same-suit runs
+  for (var i = 0; i < 10; i++) {
+    var a = P["t" + i];
+    if (a.length >= 13) {
+      var r = a.slice(-13);
+      if (r.every(function (c, k) { return c.up && c.s === r[0].s && c.r === 13 - k; })) {
+        a.splice(-13); r.forEach(function (c) { P.done.push(c); });
+        if (a.length) getTopCard("t" + i).up = true;
+      }
+    }
+  }
+}
+function doMove(sn, si, dn) {
+  snap();
+  P[sn].splice(si).forEach(function (c) { P[dn].push(c); });
+  moves++;
+  if (sn[0] === "t" && P[sn].length) getTopCard(sn).up = true;
+  if (mode[0] === "s") checkRuns();
+}
+function stockClick() {
+  var s = P.stock, c;
+  if (mode[0] === "s") {
+    if (s.length < 10) return false;
+    for (var k in P) if (k[0] === "t" && !P[k].length) { say("Fill every empty column before dealing."); return false; }
+    snap();
+    for (var i = 0; i < 10; i++) { c = s.pop(); c.up = true; P["t" + i].push(c); }
+    moves++; checkRuns(); return true;
+  }
+  if (s.length) { snap(); c = s.pop(); c.up = true; P.waste.push(c); }
+  else if (P.waste.length) { snap(); while (P.waste.length) { c = P.waste.pop(); c.up = false; s.push(c); } }
+  else return false;
+  moves++; return true;
+}
+function pyr(n) {
+  if (!canPick(n, P[n].length - 1)) { sel = null; return false; }
+  var c = getTopCard(n);
+  if (c.r === 13) { snap(); P.rem.push(P[n].pop()); moves++; sel = null; return true; }
+  if (!sel) { sel = { n: n, i: 0 }; return false; }
+  if (sel.n === n) { sel = null; return false; }
+  if (getTopCard(sel.n).r + c.r === 13) { snap(); P.rem.push(P[sel.n].pop(), P[n].pop()); moves++; sel = null; return true; }
+  sel = { n: n, i: 0 }; return false;
+}
+function isWon() {
+  if (mode === "pyramid") return Object.keys(P).every(function (k) { return k[0] !== "p" || !P[k].length; });
+  if (mode[0] === "s") return P.done.length === 104;
+  var t = 0; for (var k in P) if (k[0] === "f") t += P[k].length;
+  return t === 52;
+}
+
+/* ---------- Input ---------- */
+function clickPile(n, i) {
+  if (won) return;
+  hint = null; say("");
+  var moved = false;
+  if (n === "stock") { sel = null; moved = stockClick(); }
+  else if (mode === "pyramid") { moved = pyr(n); }
+  else {
+    if (sel) {
+      if (sel.n === n && sel.i === i) { sel = null; return render(); }
+      if (canDrop(sel.n, sel.i, n)) { doMove(sel.n, sel.i, n); sel = null; moved = true; }
+    }
+    if (!moved) {
+      if (i >= 0 && canPick(n, i)) sel = { n: n, i: i };
+      else { if (sel) say("That move isn’t allowed."); sel = null; }
+    }
+  }
+  finish(moved);
+}
+function finish(moved) {
+  if (moved) {
+    won = isWon();
+    if (won) { $("winTxt").textContent = "Solved in " + moves + " moves."; $("overlay").classList.add("show"); }
+    else if (!findHint()) say("No moves left. Undo, or start a new game.");
+  }
+  render();
+}
+function undo() {
+  if (!hist.length || won) return;
+  var s = JSON.parse(hist.pop()); P = s[0]; moves = s[1]; sel = null; hint = null; say(""); render();
+}
+
+/* ---------- Hints ---------- */
+function findHint() {
+  var best = null, bs = -1;
+  if (mode === "pyramid") {
+    var fr = ["waste"].concat(PRC.map(function (_, k) { return "p" + k; })).filter(function (n) { return canPick(n, P[n].length - 1); });
+    var ti = function (n) { return P[n].length - 1; };
+    for (var a = 0; a < fr.length; a++) if (getTopCard(fr[a]).r === 13) return { cards: [[fr[a], ti(fr[a])]], piles: [] };
+    for (var x = 0; x < fr.length; x++) for (var y = x + 1; y < fr.length; y++)
+      if (getTopCard(fr[x]).r + getTopCard(fr[y]).r === 13) return { cards: [[fr[x], ti(fr[x])], [fr[y], ti(fr[y])]], piles: [] };
+    return (P.stock.length || P.waste.length) ? { cards: [], piles: ["stock"] } : null;
+  }
+  Object.keys(P).forEach(function (sn) {
+    var a = P[sn];
+    if (!a.length || sn === "stock" || sn === "done" || sn[0] === "f") return;
+    for (var si = 0; si < a.length; si++) {
+      if (!canPick(sn, si)) continue;
+      Object.keys(P).forEach(function (dn) {
+        if ("tfc".indexOf(dn[0]) < 0 || !canDrop(sn, si, dn)) return;
+        var d = P[dn], sc = 1;
+        if (dn[0] === "c") { if (sn[0] !== "t" || si !== a.length - 1) return; sc = 0.5; }
+        if (sn[0] === "t" && si === 0 && !d.length) return;          // pointless column swap
+        if (dn[0] === "f") sc += 5;
+        if (sn[0] === "t" && si > 0 && !a[si - 1].up) sc += 3;        // reveals a hidden card
+        if (sn === "waste" || sn[0] === "c") sc += 2;
+        if (sc > bs || (sc === bs && Math.random() < 0.5)) { bs = sc; best = { cards: [[sn, si]], piles: [dn] }; }
+      });
+    }
+  });
+  if (best) return best;
+  if (mode !== "freecell" && (P.stock.length || (mode === "klondike" && P.waste.length))) return { cards: [], piles: ["stock"] };
+  return null;
+}
+
+/* ---------- Rendering ---------- */
+function size() {
+  var cols = { klondike: 7, freecell: 8, pyramid: 7, spider1: 10, spider2: 10 }[mode];
+  var w = $("felt").clientWidth - 24; GAP = w < 520 ? 3 : 8;
+  CW = Math.max(24, Math.min(84, Math.floor((w - GAP * (cols - 1)) / cols)));
+  CH = Math.round(CW * 1.4); UP = Math.round(CH * (cols > 8 ? 0.27 : 0.3)); DN = Math.round(CH * 0.12);
+  var s = $("felt").style;
+  s.setProperty("--cw", CW + "px"); s.setProperty("--ch", CH + "px"); s.setProperty("--g", GAP + "px"); s.setProperty("--cols", cols);
+}
+function cardHTML(c, n, i, y) {
+  var cls = "sc " + (c.up ? (red(c) ? "r" : "k") : "back");
+  if (sel && sel.n === n && i >= sel.i) cls += " sel";
+  if (hint && (hint.cards.some(function (x) { return x[0] === n && x[1] === i; }) || (hint.piles.indexOf(n) >= 0 && i === P[n].length - 1))) cls += " hint";
+  return '<div class="' + cls + '" data-n="' + n + '" data-i="' + i + '" style="top:' + y + 'px;z-index:' + (i + 1) + '">' +
+    (c.up ? '<span class="cn">' + RK[c.r] + SU[c.s] + '</span><span class="cs">' + SU[c.s] + "</span>" : "") + "</div>";
+}
+function pile(n, col, fan) {
+  var a = P[n], h = "", H = CH, offs = [], y = 0, k = 1;
+  if (fan) {
+    a.forEach(function (c) { offs.push(y); y += c.up ? UP : DN; });
+    var last = offs.length ? offs[offs.length - 1] : 0;
+    if (last > 6 * CH) k = 6 * CH / last;
+    a.forEach(function (c, i) { h += cardHTML(c, n, i, Math.round(offs[i] * k)); });
+    H = Math.round(last * k) + CH;
+  } else if (a.length) h = cardHTML(a[a.length - 1], n, a.length - 1, 0);
+  var cnt = "";
+  if (a.length && (n === "stock" || n === "rem")) cnt = ' data-k="' + a.length + '"';
+  if (n === "done" && a.length) cnt = ' data-k="' + (a.length / 13) + "/8" + '"';
+  return '<div class="pile' + (hint && hint.piles.indexOf(n) >= 0 ? " hint" : "") + '" data-n="' + n + '"' + cnt +
+    ' style="grid-column:' + col + ";height:" + H + 'px">' + h + "</div>";
+}
+function R(list, fan) { return '<div class="row">' + list.map(function (x) { return pile(x[0], x[1], fan); }).join("") + "</div>"; }
+function seq(p, n, s) { var o = []; for (var i = 0; i < n; i++) o.push([p + i, i + s]); return o; }
+
+function render() {
+  size();
+  var h = "";
+  if (mode === "klondike") h = R([["stock",1],["waste",2]].concat(seq("f",4,4)), 0) + R(seq("t",7,1), 1);
+  else if (mode === "freecell") h = R(seq("c",4,1).concat(seq("f",4,5)), 0) + R(seq("t",8,1), 1);
+  else if (mode[0] === "s") h = R([["stock",1],["done",10]], 0) + R(seq("t",10,1), 1);
+  else {
+    var RS = Math.round(CH * 0.5);
+    h = R([["stock",1],["waste",2],["rem",7]], 0) +
+      '<div class="pyr" style="width:' + (7 * CW + 6 * GAP) + "px;height:" + (6 * RS + CH) + 'px">';
+    PRC.forEach(function (rc, k) {
+      var n = "p" + k, a = P[n];
+      h += '<div class="pile pp' + (a.length ? "" : " e") + '" data-n="' + n + '" style="left:' + (((6 - rc[0]) / 2 + rc[1]) * (CW + GAP)) +
+        "px;top:" + (rc[0] * RS) + "px;z-index:" + (rc[0] + 1) + ";height:" + CH + 'px">' + (a.length ? cardHTML(a[0], n, 0, 0) : "") + "</div>";
+    });
+    h += "</div>";
+  }
+  $("board").innerHTML = h;
+  $("moves").textContent = moves;
+  $("bUndo").disabled = !hist.length || won;
+}
+
+/* ---------- Wiring ---------- */
+$("board").addEventListener("click", function (e) {
+  var c = e.target.closest(".sc"), p = e.target.closest(".pile");
+  if (!p) return;
+  var n = p.dataset.n;
+  clickPile(n, c ? +c.dataset.i : P[n].length - 1);
+});
+$("board").addEventListener("dblclick", function (e) {
+  var c = e.target.closest(".sc");
+  if (!c || won || (mode !== "klondike" && mode !== "freecell")) return;
+  var n = c.dataset.n, i = +c.dataset.i;
+  if (n === "stock" || n[0] === "f" || i !== P[n].length - 1) return;
+  for (var k = 0; k < 4; k++) if (canDrop(n, i, "f" + k)) { sel = null; hint = null; doMove(n, i, "f" + k); finish(true); return; }
+});
+$("mode").addEventListener("change", function () { mode = this.value; init(); });
+$("bNew").addEventListener("click", init);
+$("bAgain").addEventListener("click", init);
+$("bUndo").addEventListener("click", undo);
+$("bHint").addEventListener("click", function () {
+  if (won) return;
+  sel = null; hint = findHint();
+  say(hint ? "" : "No moves left. Undo, or start a new game.");
+  render();
+});
+window.addEventListener("resize", render);
+init();
+</script>
+</body>
+</html>

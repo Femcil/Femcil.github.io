@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chess | Celestial Hub</title>
+  <link rel="stylesheet" href="../assets/css/game-catalog.css">
+  <style>
+    /* Game-only styles. Colors inherit from game-catalog.css; change the accent and board colors here. */
+    :root { --hub-accent: #8b7cff; --sq-l: #e6dffa; --sq-d: #8470c9; }
+    .disabled-link { opacity: .45; cursor: not-allowed; pointer-events: none; }
+
+    .chess { max-width: 700px; margin: 0 auto; }
+    .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; margin: 0 0 8px; }
+    .chess h1 { margin: 0; font-size: 1.4rem; }
+    .chess .grp { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .chess select, .chess button { font: inherit; font-size: .9rem; color: inherit; cursor: pointer; padding: 6px 12px; border-radius: 6px;
+      background: rgba(127,127,127,.16); border: 1px solid rgba(127,127,127,.5); }
+    .chess select option { color: #111; }
+    .chess button:hover { background: rgba(127,127,127,.3); }
+    .chess button:disabled { opacity: .4; cursor: default; }
+    .chess button.primary { background: var(--hub-accent); border-color: var(--hub-accent); color: #fff; font-weight: 700; }
+    #status { min-height: 26px; font-size: 1.05rem; font-weight: 700; margin: 0 0 6px; }
+    #note { min-height: 22px; font-size: .9rem; opacity: .85; margin: 0 0 8px; }
+    #felt { padding: 10px; border-radius: 12px; background: rgba(0,0,0,.28); border: 1px solid rgba(127,127,127,.35); }
+    #board { width: 100%; max-width: 640px; margin: 0 auto; aspect-ratio: 1; display: grid; grid-template-columns: repeat(8, 1fr);
+      container-type: inline-size; border-radius: 4px; overflow: hidden; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+    .sq { position: relative; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .sq.l { background: var(--sq-l); } .sq.d { background: var(--sq-d); }
+    .sq.last::before { content: ""; position: absolute; inset: 0; background: rgba(255,214,0,.38); }
+    .sq.sel::before { content: ""; position: absolute; inset: 0; background: rgba(80,200,120,.55); }
+    .sq.chk::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle, rgba(255,40,40,.9), rgba(255,40,40,0) 75%); }
+    .sq.tgt::after { content: ""; position: absolute; width: 28%; height: 28%; border-radius: 50%; background: rgba(0,0,0,.28); }
+    .sq.cap::after { content: ""; position: absolute; inset: 4%; border-radius: 50%; border: 5px solid rgba(0,0,0,.3); }
+    .sq.arm::after { content: ""; position: absolute; inset: 3%; border-radius: 50%; border: 4px solid #ff3b30; animation: pulse .8s infinite; }
+    .sq.boom { animation: boom .7s ease-out; }
+    @keyframes pulse { 50% { opacity: .25; } }
+    @keyframes boom { 0% { box-shadow: inset 0 0 0 100px rgba(255,120,0,.95); } 100% { box-shadow: inset 0 0 0 100px rgba(255,120,0,0); } }
+    .co { position: absolute; font-size: 2.4cqw; font-weight: 700; opacity: .75; pointer-events: none; font-family: sans-serif; }
+    .sq.l .co { color: #5b4a9b; } .sq.d .co { color: #e6dffa; }
+    .co.rk { left: 4%; top: 3%; } .co.fl { right: 5%; bottom: 2%; }
+    .pc { position: relative; z-index: 1; font-size: 10.5cqw; line-height: 1; pointer-events: none; font-family: "Segoe UI Symbol","Noto Sans Symbols 2","Apple Symbols","DejaVu Sans",sans-serif; }
+    .pc.w { color: #fff; text-shadow: 0 0 2px #000, 0 0 2px #000, 0 1px 3px #000; }
+    .pc.b { color: #15151c; text-shadow: 0 0 2px #fff, 0 0 1px #fff; }
+    .pc.x { font-size: 9cqw; }
+    .pc.x.w { color: #ffd54a; } .pc.x.b { color: #ff5252; text-shadow: 0 0 2px #000, 0 0 2px #000; }
+    #rules { margin-top: 12px; font-size: .9rem; opacity: .85; line-height: 1.45; }
+
+    .ov { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.6); z-index: 99999; }
+    .ov.show { display: flex; }
+    .win { background: #14141f; color: #f2f2f7; border: 1px solid var(--hub-accent); border-radius: 12px; padding: 26px 34px; text-align: center; max-width: 90vw; }
+    .win h2 { margin: 0 0 8px; font-size: 1.5rem; }
+    .win p { margin: 6px 0 16px; }
+    .win .pcs { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
+    .win .pcs button { font-size: 2.2rem; line-height: 1; padding: 6px 14px; background: #3a3a55; font-family: "Segoe UI Symbol","Noto Sans Symbols 2","Apple Symbols","DejaVu Sans",sans-serif; }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <a href="../home.html" class="nav-brand">CELESTIAL</a>
+    <div class="nav-links">
+      <a href="#account" class="disabled-link" aria-disabled="true" tabindex="-1">Account</a>
+      <a href="https://discord.gg/qXJ9h7DNfs" target="_blank" class="nav-discord">Discord</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <div class="chess">
+      <div class="bar">
+        <div class="grp">
+          <h1>Chess</h1>
+          <select id="mode" aria-label="Mode">
+            <option value="classic">Classic</option>
+            <option value="modded">Modded (nukes)</option>
+          </select>
+          <select id="opp" aria-label="Opponent">
+            <option value="human">2 players</option>
+            <option value="ai">vs Computer</option>
+          </select>
+        </div>
+        <div class="grp">
+          <button id="bNew" class="primary">New game</button>
+          <button id="bUndo" disabled>Undo</button>
+          <button id="bFlip">Flip</button>
+        </div>
+      </div>
+      <div id="status"></div>
+      <div id="note"></div>
+      <div id="felt"><div id="board"></div></div>
+      <div id="rules"></div>
+    </div>
+  </main>
+
+  <div id="over" class="ov"><div class="win"><h2 id="oT"></h2><p id="oP"></p><button id="bAgain" class="primary">Play again</button> <button id="bView">View board</button></div></div>
+  <div id="promo" class="ov"><div class="win"><h2>Promote to</h2><div class="pcs" id="pcs"></div></div></div>
+
+  <footer>
+    <p>&copy; 2026 Femcil &bull; Hosted on GitHub Pages</p>
+  </footer>
+
+<script>
+"use strict";
+var G = { K: "♚", Q: "♛", R: "♜", B: "♝", N: "♞", P: "♟", X: "☢" }, VS = "\uFE0E";
+var VAL = { P: 100, N: 320, B: 330, R: 500, Q: 900, K: 0, X: 300 };
+var N8 = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+var KN = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+var RULES = {
+  classic: "Standard chess rules: castling, en passant, promotion, check, checkmate, stalemate, insufficient material and the 50-move rule. Click a piece, then click its destination.",
+  modded: "Standard chess plus ☢ nukes. Each side has one Nuke (white on a4, black on h5). It steps one square in any direction onto an empty square and never gives check. Select it and click it again to detonate: every piece except kings in the 3×3 area is destroyed, including your own. Capturing an enemy nuke detonates it too, so the capturing piece is lost. Kings are immune to blasts. Detonating can break a check by destroying the attacker."
+};
+
+/* ---------- Engine ---------- */
+function start(modded) {
+  var b = []; for (var i = 0; i < 64; i++) b.push(null);
+  var back = "RNBQKBNR";
+  for (var c = 0; c < 8; c++) { b[c] = "b" + back[c]; b[8 + c] = "bP"; b[48 + c] = "wP"; b[56 + c] = "w" + back[c]; }
+  if (modded) { b[32] = "wX"; b[31] = "bX"; }
+  return { b: b, turn: "w", cr: { wK: true, wQ: true, bK: true, bQ: true }, ep: -1, half: 0, last: null, boom: [] };
+}
+function att(b, sq, by) {
+  var r = sq >> 3, c = sq & 7, i, rr, cc, p;
+  var pr = by === "w" ? r + 1 : r - 1;
+  if (pr >= 0 && pr < 8) {
+    if (c > 0 && b[pr * 8 + c - 1] === by + "P") return true;
+    if (c < 7 && b[pr * 8 + c + 1] === by + "P") return true;
+  }
+  for (i = 0; i < 8; i++) {
+    rr = r + KN[i][0]; cc = c + KN[i][1];
+    if (rr >= 0 && rr < 8 && cc >= 0 && cc < 8 && b[rr * 8 + cc] === by + "N") return true;
+    rr = r + N8[i][0]; cc = c + N8[i][1];
+    if (rr >= 0 && rr < 8 && cc >= 0 && cc < 8 && b[rr * 8 + cc] === by + "K") return true;
+  }
+  for (i = 0; i < 8; i++) {
+    var dr = N8[i][0], dc = N8[i][1], diag = dr !== 0 && dc !== 0;
+    rr = r + dr; cc = c + dc;
+    while (rr >= 0 && rr < 8 && cc >= 0 && cc < 8) {
+      p = b[rr * 8 + cc];
+      if (p) { if (p[0] === by && (p[1] === "Q" || (diag ? p[1] === "B" : p[1] === "R"))) return true; break; }
+      rr += dr; cc += dc;
+    }
+  }
+  return false;
+}
+function inCheck(b, me) {
+  for (var i = 0; i < 64; i++) if (b[i] === me + "K") return att(b, i, me === "w" ? "b" : "w");
+  return false;
+}
+function pseudo(s) {
+  var b = s.b, me = s.turn, op = me === "w" ? "b" : "w", out = [];
+  for (var i = 0; i < 64; i++) {
+    var p = b[i]; if (!p || p[0] !== me) continue;
+    var t = p[1], r = i >> 3, c = i & 7, k, rr, cc, to;
+    var add = function (to, x) {
+      var m = { f: i, t: to, v: b[to] ? VAL[b[to][1]] * 10 - VAL[t] : 0 };
+      if (x) for (var q in x) m[q] = x[q];
+      out.push(m);
+    };
+    if (t === "P") {
+      var d = me === "w" ? -1 : 1, sr = me === "w" ? 6 : 1, lr = me === "w" ? 0 : 7, nr = r + d;
+      var push = function (to, extra) {
+        if (nr === lr) ["Q","R","B","N"].forEach(function (q) { add(to, { pr: q, v: 800 }); });
+        else add(to, extra);
+      };
+      var f1 = nr * 8 + c;
+      if (!b[f1]) { push(f1); if (r === sr && !b[f1 + d * 8]) add(f1 + d * 8, { dbl: 1 }); }
+      [-1, 1].forEach(function (dc) {
+        var c2 = c + dc; if (c2 < 0 || c2 > 7) return;
+        var t2 = nr * 8 + c2;
+        if (b[t2] && b[t2][0] === op) push(t2);
+        else if (!b[t2] && t2 === s.ep) add(t2, { ep: 1, v: 100 });
+      });
+    } else if (t === "N" || t === "K") {
+      var L = t === "N" ? KN : N8;
+      for (k = 0; k < 8; k++) {
+        rr = r + L[k][0]; cc = c + L[k][1];
+        if (rr < 0 || rr > 7 || cc < 0 || cc > 7) continue;
+        to = rr * 8 + cc;
+        if (!b[to] || b[to][0] === op) add(to);
+      }
+      if (t === "K") {
+        var h = me === "w" ? 60 : 4;
+        if (i === h) {
+          if (s.cr[me + "K"] && b[h + 3] === me + "R" && !b[h + 1] && !b[h + 2] && !att(b, h, op) && !att(b, h + 1, op) && !att(b, h + 2, op)) add(h + 2, { cs: "K", v: 0 });
+          if (s.cr[me + "Q"] && b[h - 4] === me + "R" && !b[h - 1] && !b[h - 2] && !b[h - 3] && !att(b, h, op) && !att(b, h - 1, op) && !att(b, h - 2, op)) add(h - 2, { cs: "Q", v: 0 });
+        }
+      }
+    } else if (t === "X") {
+      for (k = 0; k < 8; k++) {
+        rr = r + N8[k][0]; cc = c + N8[k][1];
+        if (rr >= 0 && rr < 8 && cc >= 0 && cc < 8 && !b[rr * 8 + cc]) add(rr * 8 + cc);
+      }
+      out.push({ f: i, t: i, det: 1, v: 0 });
+    } else {
+      for (k = 0; k < 8; k++) {
+        var diag = N8[k][0] !== 0 && N8[k][1] !== 0;
+        if (t === "B" && !diag) continue;
+        if (t === "R" && diag) continue;
+        rr = r + N8[k][0]; cc = c + N8[k][1];
+        while (rr >= 0 && rr < 8 && cc >= 0 && cc < 8) {
+          to = rr * 8 + cc;
+          if (b[to]) { if (b[to][0] === op) add(to); break; }
+          add(to);
+          rr += N8[k][0]; cc += N8[k][1];
+        }
+      }
+    }
+  }
+  return out;
+}
+function blast(b, center, list) {
+  var r = center >> 3, c = center & 7;
+  for (var dr = -1; dr <= 1; dr++) for (var dc = -1; dc <= 1; dc++) {
+    var rr = r + dr, cc = c + dc;
+    if (rr < 0 || rr > 7 || cc < 0 || cc > 7) continue;
+    var sq = rr * 8 + cc; list.push(sq);
+    if (b[sq] && b[sq][1] !== "K") b[sq] = null;       // kings are immune
+  }
+}
+function apply(s, m) {
+  var b = s.b.slice(), me = s.turn, p = b[m.f], cap = false;
+  var n = { b: b, turn: me === "w" ? "b" : "w", cr: { wK: s.cr.wK, wQ: s.cr.wQ, bK: s.cr.bK, bQ: s.cr.bQ }, ep: -1, half: s.half + 1, last: [m.f, m.t], boom: [] };
+  if (m.det) { blast(b, m.f, n.boom); n.half = 0; }
+  else {
+    var tgt = b[m.t];
+    if (tgt) cap = true;
+    b[m.t] = m.pr ? me + m.pr : p; b[m.f] = null;
+    if (m.ep) { b[m.t + (me === "w" ? 8 : -8)] = null; cap = true; }
+    if (m.cs) { var h = m.f; if (m.cs === "K") { b[h + 1] = b[h + 3]; b[h + 3] = null; } else { b[h - 1] = b[h - 4]; b[h - 4] = null; } }
+    if (p[1] === "P") { n.half = 0; if (m.dbl) n.ep = (m.f + m.t) / 2; }
+    if (cap) n.half = 0;
+    if (tgt && tgt[1] === "X") blast(b, m.t, n.boom);   // capturing a nuke detonates it
+  }
+  n.cr.wK = n.cr.wK && b[60] === "wK" && b[63] === "wR"; n.cr.wQ = n.cr.wQ && b[60] === "wK" && b[56] === "wR";
+  n.cr.bK = n.cr.bK && b[4] === "bK" && b[7] === "bR";   n.cr.bQ = n.cr.bQ && b[4] === "bK" && b[0] === "bR";
+  return n;
+}
+function legal(s) {
+  return pseudo(s).filter(function (m) { return !inCheck(apply(s, m).b, s.turn); });
+}
+function insufficient(b) {
+  var minors = 0;
+  for (var i = 0; i < 64; i++) { var p = b[i]; if (!p) continue; var t = p[1]; if (t === "P" || t === "R" || t === "Q" || t === "X") return false; if (t === "B" || t === "N") minors++; }
+  return minors <= 1;
+}
+
+/* ---------- Computer opponent (3-ply alpha-beta) ---------- */
+function evalPos(s) {
+  var v = 0;
+  for (var i = 0; i < 64; i++) {
+    var p = s.b[i]; if (!p) continue;
+    var t = p[1], r = i >> 3, c = i & 7, w = p[0] === "w";
+    var pos = t === "K" ? 0 : t === "P" ? (w ? 6 - r : r - 1) * 6 : (7 - Math.abs(3.5 - c) - Math.abs(3.5 - r)) * 4;
+    v += (w ? 1 : -1) * (VAL[t] + pos);
+  }
+  return v;
+}
+function nega(s, d, a, b) {
+  if (d === 0) return (s.turn === "w" ? 1 : -1) * evalPos(s);
+  var ms = legal(s);
+  if (!ms.length) return inCheck(s.b, s.turn) ? -100000 - d : 0;
+  ms.sort(function (x, y) { return y.v - x.v; });
+  var best = -1e9;
+  for (var i = 0; i < ms.length; i++) {
+    var v = -nega(apply(s, ms[i]), d - 1, -b, -a);
+    if (v > best) best = v;
+    if (best > a) a = best;
+    if (a >= b) break;
+  }
+  return best;
+}
+function pickAI(s, ms) {
+  ms = ms.slice().sort(function () { return Math.random() - 0.5; }).sort(function (x, y) { return y.v - x.v; });
+  var best = ms[0], bv = -1e9;
+  ms.forEach(function (m) {
+    var v = -nega(apply(s, m), 2, -1e9, -bv);
+    if (v > bv) { bv = v; best = m; }
+  });
+  return best;
+}
+
+/* ---------- UI ---------- */
+var S, LM, hist = [], sel = null, flip = false, over = false, busy = false, boomTimer = null;
+var $ = function (i) { return document.getElementById(i); };
+var SQN = function (i) { return "abcdefgh"[i & 7] + (8 - (i >> 3)); };
+function modded() { return $("mode").value === "modded"; }
+function ai() { return $("opp").value === "ai"; }
+function glyph(p) { return '<span class="pc ' + p[0] + (p[1] === "X" ? " x" : "") + '">' + G[p[1]] + VS + "</span>"; }
+
+function newGame() {
+  clearTimeout(boomTimer);
+  S = start(modded()); LM = legal(S); hist = []; sel = null; over = false; busy = false;
+  $("over").classList.remove("show"); $("promo").classList.remove("show");
+  $("rules").textContent = RULES[modded() ? "modded" : "classic"];
+  $("note").textContent = "";
+  render();
+}
+function render() {
+  var h = "", targets = {}, kingSq = -1, boomSet = {}, i, k;
+  if (sel !== null) LM.forEach(function (m) { if (m.f === sel && m.t !== m.f) targets[m.t] = true; });
+  if (inCheck(S.b, S.turn)) for (i = 0; i < 64; i++) if (S.b[i] === S.turn + "K") kingSq = i;
+  S.boom.forEach(function (q) { boomSet[q] = true; });
+  for (k = 0; k < 64; k++) {
+    var s = flip ? 63 - k : k, p = S.b[s], cls = "sq " + (((s >> 3) + (s & 7)) % 2 ? "d" : "l");
+    if (S.last && (S.last[0] === s || S.last[1] === s)) cls += " last";
+    if (sel === s) cls += " sel";
+    if (targets[s]) cls += p ? " cap" : " tgt";
+    if (s === kingSq) cls += " chk";
+    if (boomSet[s]) cls += " boom";
+    if (sel === s && p && p[1] === "X") cls += " arm";
+    h += '<div class="' + cls + '" data-s="' + s + '" aria-label="' + SQN(s) + '">';
+    if ((k & 7) === 0) h += '<span class="co rk">' + (8 - (s >> 3)) + "</span>";
+    if (k >> 3 === 7) h += '<span class="co fl">' + "abcdefgh"[s & 7] + "</span>";
+    h += (p ? glyph(p) : "") + "</div>";
+  }
+  $("board").innerHTML = h;
+  $("bUndo").disabled = !hist.length || busy;
+  var who = S.turn === "w" ? "White" : "Black";
+  if (!over) $("status").textContent = who + " to move" + (kingSq >= 0 ? " — check!" : "");
+}
+function endCheck() {
+  var t = null, d = null;
+  if (!LM.length) {
+    if (inCheck(S.b, S.turn)) { t = "Checkmate"; d = (S.turn === "w" ? "Black" : "White") + " wins."; }
+    else { t = "Stalemate"; d = "The game is a draw."; }
+  } else if (S.half >= 100) { t = "Draw"; d = "50 moves without a capture or pawn move."; }
+  else if (insufficient(S.b)) { t = "Draw"; d = "Neither side has enough material to win."; }
+  if (t) { over = true; $("status").textContent = t + " — " + d; $("oT").textContent = t; $("oP").textContent = d; $("over").classList.add("show"); }
+}
+function play(m) {
+  hist.push(S); S = apply(S, m); LM = legal(S); sel = null;
+  var was = S.boom.length > 0;
+  if (was) $("note").textContent = "☢ Detonation! Everything except kings in the blast area was destroyed.";
+  else $("note").textContent = "";
+  endCheck(); render();
+  if (was) { clearTimeout(boomTimer); boomTimer = setTimeout(function () { S.boom = []; render(); }, 750); }
+  if (!over && ai() && S.turn === "b") {
+    busy = true; render();
+    setTimeout(function () { busy = false; if (!over && ai() && S.turn === "b") play(pickAI(S, LM)); }, 250);
+  }
+}
+function click(s) {
+  if (over || busy || (ai() && S.turn === "b")) return;
+  var p = S.b[s];
+  if (sel !== null) {
+    var ms = LM.filter(function (m) { return m.f === sel && m.t === s; });
+    if (ms.length) {
+      if (ms[0].pr) {
+        var col = S.turn;
+        $("pcs").innerHTML = ["Q","R","B","N"].map(function (q) { return '<button data-pr="' + q + '" style="color:' + (col === "w" ? "#fff" : "#111") + '">' + G[q] + VS + "</button>"; }).join("");
+        $("promo").classList.add("show");
+        $("pcs").onclick = function (e) {
+          var b = e.target.closest("button"); if (!b) return;
+          $("promo").classList.remove("show");
+          play(ms.filter(function (m) { return m.pr === b.dataset.pr; })[0]);
+        };
+        return;
+      }
+      play(ms[0]); return;
+    }
+  }
+  if (p && p[0] === S.turn && LM.some(function (m) { return m.f === s; })) {
+    sel = s;
+    $("note").textContent = p[1] === "X" ? "☢ Click the nuke again to detonate it (destroys all non-king pieces around it, yours too)." : "";
+  } else { sel = null; $("note").textContent = ""; }
+  render();
+}
+function undo() {
+  if (!hist.length || busy) return;
+  clearTimeout(boomTimer);
+  S = hist.pop();
+  if (ai()) while (S.turn === "b" && hist.length) S = hist.pop();
+  S.boom = []; LM = legal(S); sel = null; over = false;
+  $("over").classList.remove("show"); $("note").textContent = ""; render();
+}
+
+$("board").addEventListener("click", function (e) { var q = e.target.closest(".sq"); if (q) click(+q.dataset.s); });
+$("mode").addEventListener("change", newGame);
+$("opp").addEventListener("change", newGame);
+$("bNew").addEventListener("click", newGame);
+$("bAgain").addEventListener("click", newGame);
+$("bView").addEventListener("click", function () { $("over").classList.remove("show"); });
+$("bUndo").addEventListener("click", undo);
+$("bFlip").addEventListener("click", function () { flip = !flip; render(); });
+newGame();
+</script>
+</body>
+</html>

@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mahjong | Celestial Hub</title>
+  <link rel="stylesheet" href="../assets/css/game-catalog.css">
+  <style>
+    /* Game-only styles. Colors inherit from game-catalog.css; change the accent here if you want an exact match. */
+    :root { --mj-accent: #8b7cff; }
+    .disabled-link { opacity: .45; cursor: not-allowed; pointer-events: none; }
+
+    .mj { max-width: 1200px; margin: 0 auto; }
+    .mj-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 18px; margin: 0 0 8px; }
+    .mj-title { margin: 0; font-size: 1.4rem; }
+    .mj-stats { display: flex; gap: 16px; font-size: .95rem; }
+    .mj-stats b { color: var(--mj-accent); font-variant-numeric: tabular-nums; }
+    .mj-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+    .mj button { font: inherit; font-size: .9rem; color: inherit; cursor: pointer; padding: 6px 14px; border-radius: 6px;
+      background: rgba(127,127,127,.16); border: 1px solid rgba(127,127,127,.5); }
+    .mj button:hover { background: rgba(127,127,127,.3); }
+    .mj button:disabled { opacity: .4; cursor: default; }
+    .mj button.primary { background: var(--mj-accent); border-color: var(--mj-accent); color: #fff; font-weight: 700; }
+    .mj button.primary:hover { filter: brightness(1.1); }
+    .mj button.flash { animation: pulse 1s infinite; border-color: #ffd54a; }
+    #msg { min-height: 24px; font-size: .95rem; opacity: .9; margin: 0 0 8px; }
+    #wrap { display: flex; align-items: center; justify-content: center; padding: 8px; overflow: hidden;
+      background: rgba(0,0,0,.28); border: 1px solid rgba(127,127,127,.35); border-radius: 12px; }
+    #board { position: relative; flex: none; }
+
+    .tile { position: absolute; border-radius: 12% / 9%; border: 1px solid #c9bd96; cursor: pointer;
+      background: linear-gradient(145deg,#fffdf3,#efe6c8);
+      box-shadow: var(--th) var(--th) 0 #2a8f66, var(--th) var(--th) 0 1px #0f4a33, 3px 5px 9px rgba(0,0,0,.45);
+      transition: transform .12s, filter .15s, opacity .22s; user-select: none; -webkit-tap-highlight-color: transparent; }
+    .tile svg { position: absolute; left: 9%; top: 7%; width: 82%; height: 86%; pointer-events: none; }
+    .tile.blocked { filter: brightness(.78) saturate(.8); cursor: not-allowed; }
+    .tile.free:hover { transform: translateY(-2px); }
+    .tile.sel { filter: none; background: linear-gradient(145deg,#fff6b8,#ffdf6b); outline: 3px solid #ffb300; outline-offset: -2px; }
+    .tile.hint { animation: pulse .7s infinite; }
+    .tile.gone { opacity: 0; transform: scale(.7); pointer-events: none; }
+    .tile.shake { animation: shake .25s; }
+    @keyframes pulse { 50% { filter: brightness(1.25) drop-shadow(0 0 6px #ffe38a); } }
+    @keyframes shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+
+    #overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.6); z-index: 99999; }
+    #overlay.show { display: flex; }
+    .mj-win { background: #14141f; color: #f2f2f7; border: 1px solid var(--mj-accent); border-radius: 12px; padding: 28px 36px; text-align: center; max-width: 90vw; }
+    .mj-win h2 { margin: 0 0 8px; font-size: 1.6rem; }
+    .mj-win p { margin: 6px 0 18px; }
+    @media (prefers-reduced-motion: reduce) { .tile, .tile.hint, .tile.shake, .mj button.flash { animation: none; transition: none; } }
+    [hidden] { display: none !important; }
+    .mj-grp { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+    .mj select { font: inherit; font-size: .9rem; color: inherit; cursor: pointer; padding: 6px 10px; border-radius: 6px;
+      background: rgba(127,127,127,.16); border: 1px solid rgba(127,127,127,.5); }
+    .mj select option { color: #111; }
+    #vsView { padding: 10px; border-radius: 12px; background: rgba(0,0,0,.28); border: 1px solid rgba(127,127,127,.35); }
+    .vseat { padding: 8px 10px; margin-bottom: 8px; border-radius: 8px; background: rgba(127,127,127,.12); border: 2px solid transparent; }
+    .vseat.act { border-color: var(--mj-accent); }
+    .vsh { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; font-size: .95rem; margin-bottom: 4px; }
+    .vsh em { font-style: normal; font-size: .75rem; padding: 1px 8px; border-radius: 8px; background: var(--mj-accent); color: #fff; }
+    .vsh .pts { margin-left: auto; font-weight: 700; }
+    .vrow { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 2px; min-height: 6px; margin: 3px 0; }
+    .vml { display: flex; gap: 2px; margin-right: 10px; }
+    .vacts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; min-height: 36px; }
+    .vres { padding: 8px 12px; border: 1px solid var(--mj-accent); border-radius: 8px; background: rgba(0,0,0,.35); line-height: 1.5; }
+    .mt { position: relative; flex: none; width: var(--tw); height: calc(var(--tw) * 1.3); border-radius: 12% / 9%; border: 1px solid #c9bd96;
+      background: linear-gradient(145deg,#fffdf3,#efe6c8); box-shadow: 2px 2px 0 #2a8f66, 2px 2px 0 1px #0f4a33; box-sizing: border-box; }
+    .mt svg { position: absolute; left: 9%; top: 7%; width: 82%; height: 86%; pointer-events: none; }
+    .mt.bk { background: repeating-linear-gradient(45deg,#2a8f66 0 4px,#1f7a55 4px 8px); border-color: #0f4a33; }
+    .mt.sm { --tw: clamp(17px, 3.7vw, 27px); }
+    .mt.lg { --tw: clamp(24px, 6vw, 44px); cursor: pointer; transition: transform .1s; }
+    .mt.lg:hover { transform: translateY(-4px); }
+    .mt.dr { margin-left: 12px; }
+    .mt.hn { outline: 3px solid #ff9800; }
+    #vRules { margin-top: 12px; font-size: .88rem; opacity: .8; line-height: 1.45; }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <a href="../home.html" class="nav-brand">CELESTIAL</a>
+    <div class="nav-links">
+      <a href="#account" class="disabled-link" aria-disabled="true" tabindex="-1">Account</a>
+      <a href="https://discord.gg/qXJ9h7DNfs" target="_blank" class="nav-discord">Discord</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <div class="mj">
+      <div class="mj-bar">
+        <div class="mj-grp">
+          <h1 class="mj-title">Mahjong</h1>
+          <select id="gmode" aria-label="Game mode">
+            <option value="sol">Tile matching (solo)</option>
+            <option value="vs">Mahjong vs AI</option>
+          </select>
+          <select id="nplay" aria-label="Players" hidden>
+            <option value="2">2 players (you + 1 AI)</option>
+            <option value="3">3 players (you + 2 AI)</option>
+            <option value="4" selected>4 players (you + 3 AI)</option>
+          </select>
+        </div>
+        <div id="solBar" class="mj-grp">
+          <div class="mj-stats">
+            <span>Tiles <b id="sLeft">144</b></span>
+            <span>Moves <b id="sMoves">0</b></span>
+            <span>Time <b id="sTime">0:00</b></span>
+            <span>Pairs open <b id="sPairs">0</b></span>
+          </div>
+          <div class="mj-btns">
+            <button id="bNew" class="primary">New game</button>
+            <button id="bUndo">Undo</button>
+            <button id="bHint">Hint</button>
+            <button id="bShuffle">Shuffle</button>
+          </div>
+        </div>
+        <div id="vsBar" class="mj-grp" hidden>
+          <span class="mj-stats">Wall <b id="vWall">0</b></span>
+          <button id="vNew" class="primary">New match</button>
+        </div>
+      </div>
+      <div id="msg"></div>
+      <div id="solView"><div id="wrap"><div id="board"></div></div></div>
+      <div id="vsView" hidden></div>
+      <div id="vRules" hidden>
+        <b>How to play.</b> 136 tiles, no flowers, no kongs. Each turn you draw a tile, then discard one. Complete hand: four sets (triplets or runs) plus a pair, or seven pairs.
+        Anyone can take a discard to make a <b>pong</b> (triplet) or finish their hand; only the player after the discarder can take a <b>chow</b> (run). Claimed sets are shown face-up.
+        Winner scores: complete hand 1, self-draw +1, concealed +1, dragon or seat-wind triplet +1 each, all triplets +2, seven pairs +3, mixed one suit +3, pure one suit +6, all honors +8.
+        Self-draw: every opponent pays that total. Win on a discard: the discarder pays it for everyone. The dealer keeps the deal after winning or a draw.
+      </div>
+    </div>
+  </main>
+
+  <div id="overlay"><div class="mj-win"><h2>You cleared the board!</h2><p id="winTxt"></p><button id="bAgain" class="primary">Play again</button></div></div>
+
+  <footer>
+    <p>&copy; 2026 Femcil &bull; Hosted on GitHub Pages</p>
+  </footer>
+
+<script>
+"use strict";
+var FONT = '"Noto Serif CJK SC","Source Han Serif SC","Songti SC","STSong","SimSun","Microsoft YaHei","PingFang SC",serif';
+
+/* ---------- Turtle layout (x,y in half-tile units; tile = 2x2) ---------- */
+var LAYOUT = (function () {
+  var p = [];
+  function row(z, y, x0, x1) { for (var x = x0; x <= x1; x += 2) p.push({ x: x, y: y, z: z }); }
+  row(0,0,2,24); row(0,2,6,20); row(0,4,4,22); row(0,6,2,24);
+  row(0,8,2,24); row(0,10,4,22); row(0,12,6,20); row(0,14,2,24);
+  p.push({ x: 0, y: 7, z: 0 }, { x: 26, y: 7, z: 0 }, { x: 28, y: 7, z: 0 });
+  for (var y = 2; y <= 12; y += 2) row(1, y, 8, 18);
+  for (var y2 = 4; y2 <= 10; y2 += 2) row(2, y2, 10, 16);
+  row(3,6,12,14); row(3,8,12,14);
+  p.push({ x: 13, y: 7, z: 4 });
+  return p; // 144 positions
+})();
+
+/* ---------- Tile faces ---------- */
+function allFaces() {
+  var f = [], i, n;
+  ["c","d","b"].forEach(function (s) {
+    for (n = 1; n <= 9; n++) for (i = 0; i < 4; i++) f.push({ k: s + n });
+  });
+  for (n = 1; n <= 4; n++) for (i = 0; i < 4; i++) f.push({ k: "w" + n });
+  for (n = 1; n <= 3; n++) for (i = 0; i < 4; i++) f.push({ k: "r" + n });
+  for (n = 1; n <= 4; n++) { f.push({ k: "f" + n }); f.push({ k: "s" + n }); }
+  return f; // 144
+}
+// Flowers match any flower, seasons match any season
+function mk(face) { var c = face.k[0]; return c === "f" ? "F" : c === "s" ? "S" : face.k; }
+
+var DOTS = {
+  1:[[20,26]], 2:[[20,15],[20,37]], 3:[[11,11],[20,26],[29,41]],
+  4:[[12,15],[28,15],[12,37],[28,37]], 5:[[12,15],[28,15],[20,26],[12,37],[28,37]],
+  6:[[12,12],[28,12],[12,26],[28,26],[12,40],[28,40]],
+  7:[[10,8],[20,13],[30,18],[12,34],[28,34],[12,45],[28,45]],
+  8:[[12,9],[28,9],[12,21],[28,21],[12,33],[28,33],[12,45],[28,45]],
+  9:[[10,11],[20,11],[30,11],[10,26],[20,26],[30,26],[10,41],[20,41],[30,41]]
+};
+var ROWS = {2:[1,1],3:[1,2],4:[2,2],5:[2,1,2],6:[3,3],7:[1,3,3],8:[4,4],9:[3,3,3]};
+
+function T(s, x, y, sz, c) {
+  return '<text x="' + x + '" y="' + y + '" font-size="' + sz + '" fill="' + c +
+    '" text-anchor="middle" font-weight="700" font-family=\'' + FONT + '\'>' + s + '</text>';
+}
+function faceSVG(k) {
+  var t = k[0], n = +k.slice(1), b = "", i;
+  if (t === "c") {
+    b = T("一二三四五六七八九".charAt(n - 1), 20, 23, 24, "#1b3a8a") + T("萬", 20, 47, 22, "#c0212b");
+  } else if (t === "d") {
+    var cols = ["#1b3a8a", "#1a7a3a", "#c0212b"];
+    DOTS[n].forEach(function (p, idx) {
+      var r = n === 1 ? 13 : n >= 8 ? 4.6 : n >= 5 ? 5.2 : 6;
+      var c = n === 1 ? "#c0212b" : cols[idx % 3];
+      b += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="' + r + '" fill="' + c + '"/>' +
+           '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="' + (r * 0.55) + '" fill="#f6efd8"/>' +
+           '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="' + (r * 0.25) + '" fill="' + c + '"/>';
+    });
+  } else if (t === "b") {
+    if (n === 1) {
+      b = '<ellipse cx="20" cy="31" rx="9" ry="12" fill="#1a7a3a"/><circle cx="20" cy="14" r="5.5" fill="#c0212b"/>' +
+          '<path d="M20 43 L14 50 M20 43 L26 50" stroke="#1a7a3a" stroke-width="2.4" fill="none"/>' +
+          '<ellipse cx="20" cy="31" rx="4" ry="7" fill="#f6efd8" opacity=".6"/>';
+    } else {
+      var R = ROWS[n], rh = 40 / R.length, h = Math.min(17, rh - 3);
+      R.forEach(function (c, ri) {
+        var cy = 6 + rh * (ri + 0.5);
+        for (i = 0; i < c; i++) {
+          var x = 20 + (i - (c - 1) / 2) * 8;
+          var red = (n === 5 && ri === 1) || (n === 7 && ri === 0) || (n === 9 && i === 1);
+          b += '<rect x="' + (x - 2.6) + '" y="' + (cy - h / 2) + '" width="5.2" height="' + h +
+               '" rx="2.4" fill="' + (red ? "#c0212b" : "#1a7a3a") + '"/>' +
+               '<rect x="' + (x - 2.6) + '" y="' + (cy - 0.6) + '" width="5.2" height="1.2" fill="#f6efd8" opacity=".7"/>';
+        }
+      });
+    }
+  } else if (t === "w") {
+    b = T("東南西北".charAt(n - 1), 20, 37, 32, "#1b1b1b");
+  } else if (t === "r") {
+    if (n === 1) b = T("中", 20, 37, 34, "#c0212b");
+    else if (n === 2) b = T("發", 20, 37, 32, "#1a7a3a");
+    else b = '<rect x="7" y="8" width="26" height="36" rx="2" fill="none" stroke="#2a4fa8" stroke-width="2.6"/>' +
+             '<rect x="11" y="12" width="18" height="28" rx="1" fill="none" stroke="#2a4fa8" stroke-width="1.2"/>';
+  } else if (t === "f") {
+    b = '<rect x="3" y="3" width="34" height="46" rx="3" fill="none" stroke="#c0212b" stroke-width="1.3" stroke-dasharray="3 2"/>' +
+        T("梅蘭菊竹".charAt(n - 1), 20, 36, 26, "#c0212b") + T(String(n), 9, 12, 9, "#c0212b");
+  } else if (t === "s") {
+    b = '<rect x="3" y="3" width="34" height="46" rx="3" fill="none" stroke="#1b3a8a" stroke-width="1.3" stroke-dasharray="3 2"/>' +
+        T("春夏秋冬".charAt(n - 1), 20, 36, 26, "#1b3a8a") + T(String(n), 9, 12, 9, "#1b3a8a");
+  }
+  return '<svg viewBox="0 0 40 52" preserveAspectRatio="xMidYMid meet">' + b + '</svg>';
+}
+
+/* ---------- Rules ---------- */
+function isFree(list, t) {
+  var L = false, R = false;
+  for (var i = 0; i < list.length; i++) {
+    var o = list[i];
+    if (o === t) continue;
+    if (o.z > t.z && Math.abs(o.x - t.x) < 2 && Math.abs(o.y - t.y) < 2) return false; // covered
+    if (o.z === t.z && Math.abs(o.y - t.y) < 2) {
+      if (o.x === t.x - 2) L = true;
+      else if (o.x === t.x + 2) R = true;
+    }
+  }
+  return !(L && R);
+}
+function rnd(n) { return Math.floor(Math.random() * n); }
+function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = rnd(i + 1), x = a[i]; a[i] = a[j]; a[j] = x; } return a; }
+
+/* Deals faces by "un-playing" the board, so every deal is guaranteed solvable. */
+function generate(list, faces) {
+  for (var attempt = 0; attempt < 400; attempt++) {
+    var rem = list.slice(), pool = shuffle(faces.slice()), plan = [], ok = true;
+    while (rem.length) {
+      var fr = rem.filter(function (t) { return isFree(rem, t); });
+      if (fr.length < 2) { ok = false; break; }
+      var i = rnd(fr.length), j = rnd(fr.length - 1); if (j >= i) j++;
+      var A = fr[i], B = fr[j];
+      var fa = pool.pop();
+      var mi = -1, key = mk(fa);
+      for (var q = 0; q < pool.length; q++) if (mk(pool[q]) === key) { mi = q; break; }
+      if (mi < 0) { ok = false; break; }
+      var fb = pool.splice(mi, 1)[0];
+      plan.push([A, fa], [B, fb]);
+      rem.splice(rem.indexOf(A), 1); rem.splice(rem.indexOf(B), 1);
+    }
+    if (ok) { plan.forEach(function (p) { p[0].face = p[1]; }); return true; }
+  }
+  return false;
+}
+
+/* ---------- Game state ---------- */
+var tiles = [], sel = null, hist = [], moves = 0, secs = 0, timer = null, over = false, hintTimer = null;
+var $ = function (id) { return document.getElementById(id); };
+var board = $("board"), wrap = $("wrap");
+
+function active() { return tiles.filter(function (t) { return !t.removed; }); }
+function findPairs() {
+  var act = active(), fr = act.filter(function (t) { return isFree(act, t); }), out = [];
+  for (var i = 0; i < fr.length; i++) for (var j = i + 1; j < fr.length; j++)
+    if (mk(fr[i].face) === mk(fr[j].face)) out.push([fr[i], fr[j]]);
+  return out;
+}
+function setMsg(s) { $("msg").textContent = s; }
+function fmt(s) { return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2); }
+
+function layout() {
+  var w = wrap.clientWidth - 16;
+  var top = wrap.getBoundingClientRect().top + window.pageYOffset;
+  var h = Math.max(300, window.innerHeight - top - 90);
+  var uw = w / 31, uh = uw * 1.3;
+  if (uh * 16.8 > h) { uh = h / 16.8; uw = uh / 1.3; }
+  var o = uw * 0.22;
+  wrap.style.height = (16 * uh + 28) + "px";
+  board.style.width = (30 * uw) + "px";
+  board.style.height = (16 * uh) + "px";
+  board.style.setProperty("--th", Math.max(2, uw * 0.2).toFixed(1) + "px");
+  tiles.forEach(function (t) {
+    var s = t.el.style;
+    s.width = (2 * uw) + "px"; s.height = (2 * uh) + "px";
+    s.left = (t.x * uw - t.z * o) + "px"; s.top = (t.y * uh - t.z * o) + "px";
+    s.zIndex = t.z * 1000 + Math.round(t.y * 10 + t.x / 2);
+  });
+}
+
+function refresh() {
+  var act = active(), pairs;
+  act.forEach(function (t) {
+    var f = isFree(act, t);
+    t.el.classList.toggle("free", f);
+    t.el.classList.toggle("blocked", !f);
+    t.el.classList.toggle("sel", t === sel);
+  });
+  pairs = findPairs();
+  $("sLeft").textContent = act.length;
+  $("sMoves").textContent = moves;
+  $("sPairs").textContent = pairs.length;
+  $("bUndo").disabled = hist.length === 0 || over;
+  $("bShuffle").classList.toggle("flash", !over && act.length > 0 && pairs.length === 0);
+}
+
+function clearHint() {
+  clearTimeout(hintTimer);
+  tiles.forEach(function (t) { t.el.classList.remove("hint"); });
+}
+
+function click(t) {
+  if (over || t.removed) return;
+  var act = active();
+  if (!isFree(act, t)) {
+    t.el.classList.remove("shake"); void t.el.offsetWidth; t.el.classList.add("shake");
+    setMsg("That tile is blocked.");
+    return;
+  }
+  clearHint();
+  if (!sel) { sel = t; setMsg(""); }
+  else if (sel === t) { sel = null; }
+  else if (mk(sel.face) === mk(t.face)) {
+    var a = sel, b = t;
+    a.removed = b.removed = true;
+    a.el.classList.add("gone"); b.el.classList.add("gone");
+    hist.push([a, b]); moves++; sel = null;
+    var left = active().length;
+    refresh();
+    if (left === 0) return win();
+    if (findPairs().length === 0) setMsg("No moves left. Press Shuffle, or Undo to take a move back.");
+    else setMsg("");
+    return;
+  } else { sel = t; setMsg(""); }
+  refresh();
+}
+
+function win() {
+  over = true; clearInterval(timer);
+  $("winTxt").textContent = "Time " + fmt(secs) + " in " + moves + " moves.";
+  $("overlay").classList.add("show");
+  refresh();
+}
+
+function hint() {
+  if (over) return;
+  var pairs = findPairs();
+  clearHint();
+  if (!pairs.length) { setMsg("No moves left. Press Shuffle."); return; }
+  var p = pairs[rnd(pairs.length)];
+  sel = null; refresh();
+  p[0].el.classList.add("hint"); p[1].el.classList.add("hint");
+  hintTimer = setTimeout(clearHint, 2200);
+}
+
+function undo() {
+  if (over || !hist.length) return;
+  clearHint();
+  var p = hist.pop();
+  p[0].removed = p[1].removed = false;
+  p[0].el.classList.remove("gone"); p[1].el.classList.remove("gone");
+  moves = Math.max(0, moves - 1); sel = null;
+  setMsg(""); refresh();
+}
+
+function reshuffle() {
+  if (over) return;
+  clearHint(); sel = null;
+  var act = active();
+  if (!act.length) return;
+  var faces = act.map(function (t) { return t.face; });
+  if (!generate(act, faces)) {            // extremely rare fallback
+    for (var n = 0; n < 200; n++) {
+      shuffle(faces); act.forEach(function (t, i) { t.face = faces[i]; });
+      if (findPairs().length) break;
+    }
+  }
+  act.forEach(function (t) { t.el.innerHTML = faceSVG(t.face.k); });
+  setMsg("Tiles shuffled."); refresh();
+}
+
+function newGame() {
+  clearInterval(timer); clearHint();
+  board.innerHTML = ""; sel = null; hist = []; moves = 0; secs = 0; over = false;
+  $("overlay").classList.remove("show");
+  tiles = LAYOUT.map(function (p) { return { x: p.x, y: p.y, z: p.z, removed: false, face: null, el: null }; });
+  if (!generate(tiles, allFaces())) {
+    var f = shuffle(allFaces()); tiles.forEach(function (t, i) { t.face = f[i]; });
+  }
+  tiles.forEach(function (t) {
+    var e = document.createElement("div");
+    e.className = "tile";
+    e.innerHTML = faceSVG(t.face.k);
+    e.addEventListener("click", function () { click(t); });
+    t.el = e; board.appendChild(e);
+  });
+  layout(); refresh();
+  setMsg("Match two identical free tiles. Any flower matches any flower, any season matches any season.");
+  $("sTime").textContent = "0:00";
+  timer = setInterval(function () { secs++; $("sTime").textContent = fmt(secs); }, 1000);
+}
+
+$("bNew").addEventListener("click", newGame);
+$("bAgain").addEventListener("click", newGame);
+$("bUndo").addEventListener("click", undo);
+$("bHint").addEventListener("click", hint);
+$("bShuffle").addEventListener("click", reshuffle);
+window.addEventListener("resize", function () { if (gmode === "sol") layout(); });
+window.addEventListener("keydown", function (e) {
+  if (gmode !== "sol") return;
+  if (e.key === "h" || e.key === "H") hint();
+  else if (e.key === "u" || e.key === "U") undo();
+  else if (e.key === "s" || e.key === "S") reshuffle();
+  else if (e.key === "n" || e.key === "N") newGame();
+});
+/* ---------- Mahjong vs AI ---------- */
+var VS = (function () {
+  var WC = ["東","南","西","北"], NAMES = ["You","Mei","Chen","Lan"], TN = ["Characters","Dots","Bamboo"];
+  var G = null, N = 4, gen = 0;
+  function asc(a, b) { return a - b; }
+  function key(t) { return t < 9 ? "c" + (t + 1) : t < 18 ? "d" + (t - 8) : t < 27 ? "b" + (t - 17) : t < 31 ? "w" + (t - 26) : "r" + (t - 30); }
+  function tname(t) {
+    if (t < 27) return (t % 9 + 1) + " " + TN[(t / 9) | 0];
+    if (t < 31) return ["East","South","West","North"][t - 27] + " wind";
+    return ["Red","Green","White"][t - 31] + " dragon";
+  }
+  function nm(p) { return p === 0 ? "You" : NAMES[p] + " (AI)"; }
+  function counts(h) { var c = [], i; for (i = 0; i < 34; i++) c.push(0); h.forEach(function (t) { c[t]++; }); return c; }
+  function later(fn, ms) { var g = gen; setTimeout(function () { if (g === gen) fn(); }, ms); }
+  function say(s) { $("msg").textContent = s; }
+
+  /* --- hand analysis --- */
+  function sets(c) {
+    for (var i = 0; i < 34; i++) if (c[i]) {
+      var r;
+      if (c[i] >= 3) { c[i] -= 3; r = sets(c); c[i] += 3; if (r) return true; }
+      if (i < 27 && i % 9 < 7 && c[i + 1] && c[i + 2]) { c[i]--; c[i + 1]--; c[i + 2]--; r = sets(c); c[i]++; c[i + 1]++; c[i + 2]++; if (r) return true; }
+      return false;
+    }
+    return true;
+  }
+  function trip(c) {
+    for (var i = 0; i < 34; i++) if (c[i]) {
+      if (c[i] < 3) return false;
+      c[i] -= 3; var r = trip(c); c[i] += 3; return r;
+    }
+    return true;
+  }
+  function allTrip(c) { for (var i = 0; i < 34; i++) if (c[i] >= 2) { c[i] -= 2; var r = trip(c); c[i] += 2; if (r) return true; } return false; }
+  function sevenPairs(c) { var p = 0; for (var i = 0; i < 34; i++) { if (c[i] === 2) p++; else if (c[i]) return false; } return p === 7; }
+  function isWin(c, m) {
+    var tot = 0, i; for (i = 0; i < 34; i++) tot += c[i];
+    if (tot !== 14 - 3 * m) return false;
+    if (!m && sevenPairs(c)) return true;
+    for (i = 0; i < 34; i++) if (c[i] >= 2) { c[i] -= 2; var r = sets(c); c[i] += 2; if (r) return true; }
+    return false;
+  }
+  function shStd(c, m) {
+    var best = 8;
+    function go(i, s, t, p) {
+      while (i < 34 && !c[i]) i++;
+      if (i >= 34) { var v = 8 - 2 * s - Math.min(t, 4 - s) - p; if (v < best) best = v; return; }
+      var su = i < 27, r = i % 9;
+      if (c[i] >= 3) { c[i] -= 3; go(i, s + 1, t, p); c[i] += 3; }
+      if (su && r < 7 && c[i + 1] && c[i + 2]) { c[i]--; c[i + 1]--; c[i + 2]--; go(i, s + 1, t, p); c[i]++; c[i + 1]++; c[i + 2]++; }
+      if (c[i] >= 2) { c[i] -= 2; if (!p) go(i, s, t, 1); go(i, s, t + 1, p); c[i] += 2; }
+      if (su && r < 8 && c[i + 1]) { c[i]--; c[i + 1]--; go(i, s, t + 1, p); c[i]++; c[i + 1]++; }
+      if (su && r < 7 && c[i + 2]) { c[i]--; c[i + 2]--; go(i, s, t + 1, p); c[i]++; c[i + 2]++; }
+      c[i]--; go(i, s, t, p); c[i]++;
+    }
+    go(0, m, 0, 0);
+    return best;
+  }
+  function sh(c, m) {
+    var s = shStd(c, m);
+    if (!m) { var p = 0, k = 0; for (var i = 0; i < 34; i++) { if (c[i] >= 2) p++; if (c[i]) k++; } s = Math.min(s, 6 - p + Math.max(0, 7 - k)); }
+    return s;
+  }
+  function visible(p) {
+    var v = counts(G.hands[p]);
+    G.discards.forEach(function (d) { d.forEach(function (t) { v[t]++; }); });
+    G.melds.forEach(function (ms) { ms.forEach(function (m) { m.t.forEach(function (t) { v[t]++; }); }); });
+    return v;
+  }
+  function pickDiscard(p) {
+    var h = G.hands[p], m = G.melds[p].length, c = counts(h), vis = visible(p), cand = [], best = 99, t, k;
+    for (t = 0; t < 34; t++) if (c[t]) { c[t]--; var s = sh(c, m); c[t]++; cand.push({ t: t, s: s }); if (s < best) best = s; }
+    var pick = -1, pv = -1e9;
+    cand.filter(function (x) { return x.s === best; }).forEach(function (x) {
+      var u = 0; c[x.t]--;
+      for (k = 0; k < 34; k++) if (vis[k] < 4) { c[k]++; if (sh(c, m) < best) u += 4 - vis[k]; c[k]--; }
+      c[x.t]++;
+      var v = u * 10 + vis[x.t] * 2 + (x.t >= 27 ? 3 : (x.t % 9 === 0 || x.t % 9 === 8) ? 1 : 0) + Math.random();
+      if (v > pv) { pv = v; pick = x.t; }
+    });
+    return h.lastIndexOf(pick);
+  }
+  function chows(h, t) {
+    var o = [], c = counts(h), r = t % 9;
+    if (t >= 27) return o;
+    if (r >= 2 && c[t - 2] && c[t - 1]) o.push([t - 2, t - 1]);
+    if (r >= 1 && r <= 7 && c[t - 1] && c[t + 1]) o.push([t - 1, t + 1]);
+    if (r <= 6 && c[t + 1] && c[t + 2]) o.push([t + 1, t + 2]);
+    return o;
+  }
+  function yaku(p, tsumo) {
+    var c = counts(G.hands[p]), ms = G.melds[p], all = c.slice(), y = [["Complete hand", 1]], i;
+    ms.forEach(function (m) { m.t.forEach(function (t) { all[t]++; }); });
+    if (tsumo) y.push(["Self-draw", 1]);
+    if (!ms.length) y.push(["Concealed hand", 1]);
+    if (!ms.length && sevenPairs(c)) y.push(["Seven pairs", 3]);
+    else if (ms.every(function (m) { return m.k === "pong"; }) && allTrip(c)) y.push(["All triplets", 2]);
+    var su = {}, ns = 0, hon = false;
+    for (i = 0; i < 34; i++) if (all[i]) { if (i < 27) { if (!su[(i / 9) | 0]) { su[(i / 9) | 0] = 1; ns++; } } else hon = true; }
+    if (ns === 1) y.push(hon ? ["Mixed one suit", 3] : ["Pure one suit", 6]);
+    else if (ns === 0) y.push(["All honors", 8]);
+    for (i = 31; i < 34; i++) if (all[i] >= 3) y.push([tname(i) + " triplet", 1]);
+    if (all[27 + ((p - G.dealer + N) % N)] >= 3) y.push(["Seat wind triplet", 1]);
+    return y;
+  }
+
+  /* --- game flow --- */
+  function startMatch(n) {
+    N = n; G = { scores: [], dealer: 0, nextDealer: 0 };
+    for (var i = 0; i < N; i++) G.scores.push(0);
+    startHand();
+  }
+  function startHand() {
+    gen++;
+    var w = [], t, k, p;
+    for (t = 0; t < 34; t++) for (k = 0; k < 4; k++) w.push(t);
+    shuffle(w);
+    G.wall = w; G.hands = []; G.melds = []; G.discards = [];
+    for (p = 0; p < N; p++) {
+      G.hands.push([]); G.melds.push([]); G.discards.push([]);
+      for (k = 0; k < 13; k++) G.hands[p].push(G.wall.pop());
+      G.hands[p].sort(asc);
+    }
+    G.over = false; G.result = null; G.prompt = null; G.hint = -1; G.fresh = false; G.phase = "discard"; G.turn = G.dealer;
+    say("New hand. " + nm(G.dealer) + (G.dealer === 0 ? " are" : " is") + " the dealer (East).");
+    draw(G.dealer);
+  }
+  function draw(p) {
+    if (!G.wall.length) return endDraw();
+    G.hands[p].push(G.wall.pop());
+    G.turn = p; G.phase = "discard"; G.fresh = true; G.hint = -1;
+    render();
+    if (p !== 0) later(function () { aiTurn(false); }, 450);
+  }
+  function aiTurn(claimed) {
+    var p = G.turn;
+    if (!claimed && isWin(counts(G.hands[p]), G.melds[p].length)) return win(p, true, -1);
+    discard(p, pickDiscard(p));
+  }
+  function discard(p, i) {
+    var h = G.hands[p], t = h.splice(i, 1)[0];
+    h.sort(asc); G.fresh = false; G.hint = -1;
+    G.discards[p].push(t); G.phase = "claim";
+    say(nm(p) + (p === 0 ? " discard " : " discards ") + tname(t) + ".");
+    render();
+    later(function () { claims(p, t); }, 300);
+  }
+  function claims(d, t) {
+    var cs = [], i, s, c;
+    for (i = 1; i < N; i++) { s = (d + i) % N; c = counts(G.hands[s]); c[t]++; if (isWin(c, G.melds[s].length)) cs.push({ s: s, k: "ron" }); }
+    for (i = 1; i < N; i++) { s = (d + i) % N; if (counts(G.hands[s])[t] >= 2) cs.push({ s: s, k: "pong" }); }
+    s = (d + 1) % N; var ch = chows(G.hands[s], t);
+    if (ch.length) cs.push({ s: s, k: "chow", o: ch });
+    step(cs, 0, d, t);
+  }
+  function aiWants(c, t) {
+    if (c.k === "ron") return true;
+    var h = G.hands[c.s], m = G.melds[c.s].length, cc = counts(h), s0 = sh(cc, m), best = 99;
+    (c.k === "pong" ? [[t, t]] : c.o).forEach(function (o) {
+      var c2 = cc.slice(), s1 = 99, x;
+      o.forEach(function (y) { c2[y]--; });
+      for (x = 0; x < 34; x++) if (c2[x]) { c2[x]--; var v = sh(c2, m + 1); c2[x]++; if (v < s1) s1 = v; }
+      if (s1 < best) { best = s1; c.pick = o; }
+    });
+    return best < s0 || (c.k === "pong" && t >= 31 && best <= s0);
+  }
+  function step(cs, i, d, t) {
+    if (i >= cs.length) return draw((d + 1) % N);
+    var c = cs[i];
+    if (c.s !== 0) { if (aiWants(c, t)) exec(c, d, t, c.pick); else step(cs, i + 1, d, t); return; }
+    var btns = [], pass = { label: "Pass", fn: function () { G.prompt = null; step(cs, i + 1, d, t); } };
+    if (c.k === "ron") btns.push({ label: "Mahjong! (win)", fn: function () { exec(c, d, t); } });
+    else if (c.k === "pong") btns.push({ label: "Pong", fn: function () { exec(c, d, t, [t, t]); } });
+    else c.o.forEach(function (o) {
+      var ts = [o[0], o[1], t].sort(asc);
+      btns.push({ label: "Chow " + ts.map(function (x) { return x < 27 ? x % 9 + 1 : "?"; }).join("-"), fn: function () { exec(c, d, t, o); } });
+    });
+    btns.push(pass);
+    G.prompt = { t: t, text: nm(d) + " discarded " + tname(t) + ".", btns: btns };
+    render();
+  }
+  function exec(c, d, t, opt) {
+    var s = c.s, h = G.hands[s];
+    G.prompt = null; G.hint = -1;
+    if (c.k === "ron") { h.push(t); G.discards[d].pop(); return win(s, false, d); }
+    var use = c.k === "pong" ? [t, t] : opt;
+    use.forEach(function (x) { h.splice(h.indexOf(x), 1); });
+    G.melds[s].push({ k: c.k, t: (c.k === "pong" ? [t, t, t] : [opt[0], opt[1], t].sort(asc)) });
+    G.discards[d].pop(); G.turn = s; G.phase = "discard"; G.fresh = false;
+    say(nm(s) + (s === 0 ? " call " : " calls ") + c.k + " on " + tname(t) + ".");
+    render();
+    if (s !== 0) later(function () { aiTurn(true); }, 500);
+  }
+  function win(p, tsumo, from) {
+    gen++;
+    var y = yaku(p, tsumo), pts = 0, d = [], i;
+    y.forEach(function (x) { pts += x[1]; });
+    for (i = 0; i < N; i++) d.push(0);
+    if (tsumo) { for (i = 0; i < N; i++) if (i !== p) { d[i] -= pts; d[p] += pts; } }
+    else { d[from] -= pts * (N - 1); d[p] += pts * (N - 1); }
+    for (i = 0; i < N; i++) G.scores[i] += d[i];
+    G.over = true; G.prompt = null; G.result = { p: p, y: y, pts: pts, d: d, tsumo: tsumo, from: from };
+    G.nextDealer = p === G.dealer ? G.dealer : (G.dealer + 1) % N;
+    say(nm(p) + (p === 0 ? " win" : " wins") + "!");
+    render();
+  }
+  function endDraw() {
+    gen++; G.over = true; G.prompt = null; G.result = { draw: true }; G.nextDealer = G.dealer;
+    say("The wall is empty. Draw."); render();
+  }
+
+  /* --- rendering --- */
+  function tile(t, cls, extra) { return '<div class="mt ' + cls + '"' + (extra || "") + ">" + faceSVG(key(t)) + "</div>"; }
+  function melds(ms) { return ms.map(function (m) { return '<div class="vml">' + m.t.map(function (t) { return tile(t, "sm"); }).join("") + "</div>"; }).join(""); }
+  function head(p) {
+    return '<div class="vsh"><b>' + nm(p) + "</b><span>" + WC[(p - G.dealer + N) % N] + "</span>" + (p === G.dealer ? "<em>dealer</em>" : "") +
+      '<span class="pts">' + G.scores[p] + " pts</span></div>";
+  }
+  function river(p) { return '<div class="vrow">' + G.discards[p].map(function (t) { return tile(t, "sm"); }).join("") + "</div>"; }
+  function render() {
+    if (!G) return;
+    var h = "", p, a = "", r;
+    for (p = 1; p < N; p++) {
+      var bk = G.hands[p].map(function (t) { return G.over ? tile(t, "sm") : '<div class="mt bk sm"></div>'; }).join("");
+      h += '<div class="vseat' + (G.turn === p && !G.over ? " act" : "") + '">' + head(p) + '<div class="vrow">' + melds(G.melds[p]) + bk + "</div>" + river(p) + "</div>";
+    }
+    var hd = G.hands[0], fresh = G.fresh && G.turn === 0 && !G.over, mine = "";
+    hd.forEach(function (t, i) { mine += tile(t, "lg" + (fresh && i === hd.length - 1 ? " dr" : "") + (G.hint === i ? " hn" : ""), ' data-i="' + i + '"'); });
+    if (G.over) {
+      r = G.result;
+      if (r.draw) a = "<b>Draw: the wall ran out.</b>";
+      else a = '<div class="vres"><b>' + nm(r.p) + (r.p === 0 ? " win" : " wins") + (r.tsumo ? " by self-draw" : " on " + nm(r.from) + "’s discard") + "!</b><br>" +
+        r.y.map(function (x) { return x[0] + " +" + x[1]; }).join(" · ") + "<br>Total " + r.pts + " · " +
+        r.d.map(function (x, i) { return nm(i) + " " + (x > 0 ? "+" : "") + x; }).join(", ") + "</div>";
+      a += ' <button class="primary" data-a="next">Next hand</button>';
+    } else if (G.prompt) {
+      a = tile(G.prompt.t, "sm") + " <span>" + G.prompt.text + "</span> " + G.prompt.btns.map(function (b, i) { return '<button data-b="' + i + '">' + b.label + "</button>"; }).join(" ");
+    } else if (G.turn === 0 && G.phase === "discard") {
+      a = "<span>Your turn: click a tile to discard.</span>";
+      if (fresh && isWin(counts(hd), G.melds[0].length)) a += ' <button class="primary" data-a="win">Mahjong! (self-draw)</button>';
+      a += ' <button data-a="hint">Hint</button>';
+    } else a = "<span>" + (G.phase === "claim" ? "Checking claims…" : nm(G.turn) + " is thinking…") + "</span>";
+    h += '<div class="vseat' + (G.turn === 0 && !G.over ? " act" : "") + '">' + head(0) + river(0) + '<div class="vrow">' + melds(G.melds[0]) + mine + '</div><div class="vacts">' + a + "</div></div>";
+    $("vsView").innerHTML = h;
+    $("vWall").textContent = G.wall.length;
+  }
+  $("vsView").addEventListener("click", function (e) {
+    if (!G) return;
+    var b = e.target.closest("button");
+    if (b) {
+      var a = b.dataset.a;
+      if (a === "next") { G.dealer = G.nextDealer; startHand(); }
+      else if (a === "win" && !G.over && G.turn === 0) win(0, true, -1);
+      else if (a === "hint" && !G.over && G.turn === 0 && G.phase === "discard") { G.hint = pickDiscard(0); render(); }
+      else if (b.dataset.b !== undefined && G.prompt) G.prompt.btns[+b.dataset.b].fn();
+      return;
+    }
+    var t = e.target.closest(".mt.lg");
+    if (t && !G.over && !G.prompt && G.turn === 0 && G.phase === "discard") discard(0, +t.dataset.i);
+  });
+  return {
+    start: startMatch, stop: function () { gen++; }, g: function () { return G; },
+    _t: { isWin: isWin, sh: sh, counts: counts, pickDiscard: pickDiscard, discard: discard, win: win }
+  };
+})();
+
+/* ---------- Mode switching ---------- */
+var gmode = "sol";
+function setMode(m) {
+  gmode = m;
+  var vs = m === "vs";
+  $("solView").hidden = vs; $("solBar").hidden = vs;
+  $("vsView").hidden = !vs; $("vsBar").hidden = !vs; $("nplay").hidden = !vs; $("vRules").hidden = !vs;
+  if (vs) { clearInterval(timer); clearHint(); VS.start(+$("nplay").value); }
+  else { VS.stop(); newGame(); }
+}
+$("gmode").addEventListener("change", function () { setMode(this.value); });
+$("nplay").addEventListener("change", function () { VS.start(+this.value); });
+$("vNew").addEventListener("click", function () { VS.start(+$("nplay").value); });
+newGame();
+</script>
+</body>
+</html>
