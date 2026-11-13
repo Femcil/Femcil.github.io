@@ -1,773 +1,538 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Celestial — Advanced Particle Sandbox</title>
-    <style>
-        :root {
-            --bg-color: #0b0c16;
-            --panel-color: #141627;
-            --accent-color: #ff7bb0;
-            --text-color: #ffffff;
-            --text-dim: #9496b8;
-            --border-color: #272a48;
-        }
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: 'Courier New', monospace;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Powder Toy | Celestial Hub</title>
+  <link rel="stylesheet" href="../../assets/css/game-catalog.css">
+  <style>
+    :root { --pt-accent: var(--accent-pink, #ff7bb0); --pt-panel: var(--card-bg, #141627); --pt-border: var(--border-color, #272a48); --pt-dim: var(--text-dim, #9496b8); --pt-bg: #0b0c16; }
+    .disabled-link { opacity: .5; cursor: not-allowed; pointer-events: none; }
+    .back-link { color: var(--pt-accent); text-decoration: none; font-size: .9rem; display: inline-block; margin-bottom: 8px; }
+    .back-link:hover { text-decoration: underline; }
 
-        /* Navbar */
-.navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 32px;
-  background: rgba(20, 22, 39, 0.8);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--border-color);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.nav-brand {
-  font-weight: 800;
-  letter-spacing: 2px;
-  color: var(--accent-pink);
-}
-
-.nav-links a {
-  color: var(--text-main);
-  text-decoration: none;
-  margin-left: 20px;
-  font-size: 0.95rem;
-  transition: color 0.2s;
-}
-
-.nav-links a:hover, .nav-links a.active {
-  color: var(--accent-blue);
-}
-
-.nav-links .nav-discord {
-  background-color: #5865f2;
-  padding: 6px 14px;
-  border-radius: 6px;
-  color: #fff !important;
-}
-
-.disabled-link {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-        .sandbox-container {
-            background: var(--panel-color);
-            border: 2px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .toolbar-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            margin-bottom: 8px;
-            max-width: 760px;
-            justify-content: center;
-            align-items: center;
-        }
-        .control-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 8px;
-            font-size: 0.85rem;
-            color: var(--text-dim);
-        }
-        .label {
-            font-size: 0.75rem;
-            color: var(--accent-color);
-            width: 100%;
-            text-align: center;
-            margin-top: 4px;
-            font-weight: bold;
-        }
-        input[type="number"] {
-            background: var(--bg-color);
-            border: 1px solid var(--border-color);
-            color: var(--accent-color);
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-family: inherit;
-            width: 70px;
-            text-align: center;
-        }
-        input[type="range"] {
-            accent-color: var(--accent-color);
-            cursor: pointer;
-        }
-        button {
-            background: var(--bg-color);
-            border: 1px solid var(--border-color);
-            color: var(--text-dim);
-            padding: 4px 8px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-family: inherit;
-            font-size: 0.78rem;
-            transition: all 0.2s;
-        }
-        button:hover, button.active {
-            border-color: var(--accent-color);
-            color: var(--accent-color);
-            background: rgba(255, 123, 176, 0.08);
-        }
-        .inspector-hud {
-            width: 600px;
-            background: var(--bg-color);
-            border: 1px solid var(--border-color);
-            border-radius: 6px 6px 0 0;
-            padding: 6px 12px;
-            box-sizing: border-box;
-            font-size: 0.8rem;
-            color: var(--accent-color);
-            display: flex;
-            justify-content: space-between;
-            font-weight: bold;
-        }
-        canvas {
-            background: #000;
-            border: 2px solid var(--border-color);
-            border-top: none;
-            border-radius: 0 0 6px 6px;
-            display: block;
-            width: 600px;
-            height: 400px;
-            image-rendering: pixelated;
-            image-rendering: crisp-edges;
-            cursor: crosshair;
-        }
-        .footer {
-            margin-top: 8px;
-            font-size: 0.78rem;
-            color: var(--text-dim);
-            text-align: center;
-        }
-    </style>
+    .pt { background: var(--pt-panel); border: 1px solid var(--pt-border); border-radius: 12px; padding: 14px; max-width: 940px; margin: 0 auto; box-sizing: border-box;
+      display: flex; flex-direction: column; align-items: center; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+    .pt-row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: center; margin-bottom: 8px; font-size: .85rem; color: var(--pt-dim); }
+    .pt-label { width: 100%; text-align: center; font-size: .75rem; font-weight: 700; color: var(--pt-accent); margin-top: 4px; }
+    .pt-group { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-bottom: 6px; max-width: 800px; }
+    .pt button, .pt input[type=number] { background: var(--pt-bg); border: 1px solid var(--pt-border); color: var(--pt-dim); padding: 4px 8px; border-radius: 6px; font: inherit; font-size: .78rem; }
+    .pt button { cursor: pointer; transition: all .15s; }
+    .pt button:hover, .pt button.active { border-color: var(--pt-accent); color: var(--pt-accent); background: rgba(255,123,176,.08); }
+    .pt button.danger { border-color: #ff3b6b; color: #ff3b6b; }
+    .pt select { background: var(--pt-bg); border: 1px solid var(--pt-border); color: var(--pt-accent); padding: 3px 6px; border-radius: 6px; font: inherit; font-size: .78rem; }
+    .pt input[type=number] { width: 70px; text-align: center; color: var(--pt-accent); }
+    .pt input[type=range] { accent-color: var(--pt-accent); cursor: pointer; }
+    .pt-hud { width: 100%; max-width: 900px; box-sizing: border-box; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px;
+      background: var(--pt-bg); border: 1px solid var(--pt-border); border-radius: 6px 6px 0 0; padding: 6px 12px; font-size: .8rem; font-weight: 700; color: var(--pt-accent); }
+    canvas { display: block; width: 100%; max-width: 900px; aspect-ratio: 3 / 2; background: #000; border: 1px solid var(--pt-border); border-top: none; border-radius: 0 0 6px 6px;
+      image-rendering: pixelated; image-rendering: crisp-edges; cursor: crosshair; touch-action: none; }
+    .pt-foot { margin-top: 8px; font-size: .78rem; color: var(--pt-dim); text-align: center; line-height: 1.5; }
+  </style>
 </head>
 <body>
-
-    <div class="sandbox-container">
-        <div class="control-row">
-            <label for="env-temp-input">Global Temp (°C):</label>
-            <input type="number" id="env-temp-input" value="20" onchange="updateAmbientTemp(this.value)">
-            
-            <label for="brush-size-input" style="margin-left: 15px;">Brush Size:</label>
-            <input type="range" id="brush-size-input" min="1" max="15" value="4" oninput="updateBrushSize(this.value)">
-            <span id="brush-size-val" style="color: var(--accent-color); font-weight: bold;">4px</span>
-        </div>
-
-        <div class="label">BASIC & CHEMICAL</div>
-        <div class="toolbar-group">
-            <button id="btn-1" class="active" onclick="setElement(1)">Sand</button>
-            <button id="btn-2" onclick="setElement(2)">Water</button>
-            <button id="btn-4" onclick="setElement(4)">Salt</button>
-            <button id="btn-11" onclick="setElement(11)">Salt Water</button>
-            <button id="btn-38" onclick="setElement(38)">Oil</button>
-            <button id="btn-37" onclick="setElement(37)">Acid</button>
-            <button id="btn-12" onclick="setElement(12)">Molten Glass</button>
-            <button id="btn-13" onclick="setElement(13)">Glass</button>
-            <button id="btn-5" onclick="setElement(5)">Wood</button>
-            <button id="btn-6" onclick="setElement(6)">Fire</button>
-            <button id="btn-7" onclick="setElement(7)">Lava</button>
-            <button id="btn-8" onclick="setElement(8)">Stone</button>
-            <button id="btn-9" onclick="setElement(9)">Vapor</button>
-            <button id="btn-10" onclick="setElement(10)">Ice</button>
-            <button id="btn-3" onclick="setElement(3)">Wall</button>
-            <button id="btn-0" onclick="setElement(0)">Eraser</button>
-        </div>
-
-        <div class="label">ELECTRICAL & NUCLEAR</div>
-        <div class="toolbar-group">
-            <button id="btn-30" onclick="setElement(30)">Metal</button>
-            <button id="btn-31" onclick="setElement(31)">Electricity Tool</button>
-            <button id="btn-36" onclick="setElement(36)">Lithium</button>
-            <button id="btn-39" onclick="setElement(39)">C-4</button>
-            <button id="btn-32" onclick="setElement(32)">Uranium</button>
-            <button id="btn-40" onclick="setElement(40)">Black Hole</button>
-            <button id="btn-33" onclick="setElement(33)">Neutron</button>
-            <button id="btn-34" onclick="setElement(34)">Proton</button>
-            <button id="btn-35" onclick="setElement(35)">Electron</button>
-        </div>
-
-        <div class="label">TOOLS</div>
-        <div class="toolbar-group">
-            <button id="btn-101" onclick="setElement(101)">Heat Tool</button>
-            <button id="btn-102" onclick="setElement(102)">Cool Tool</button>
-            <button id="btn-103" onclick="setElement(103)">Wind Tool</button>
-            <button onclick="clearGrid()" style="border-color: #ff3b6b; color: #ff3b6b;">Clear Canvas</button>
-        </div>
-
-        <div class="inspector-hud">
-            <span id="hover-element">Hover: Air</span>
-            <span id="hover-temp">Temp: 20.0°C</span>
-            <span id="hover-density">Density: 0</span>
-        </div>
-        <canvas id="simCanvas" width="300" height="200"></canvas>
-
-        <div class="footer">
-            Black Holes exert 360° gravitational vector pull ($1/r^2$), overcoming standard gravity!
-        </div>
+  <nav class="navbar">
+    <a href="../../home.html" class="nav-brand">CELESTIAL</a>
+    <div class="nav-links">
+      <a href="#account" class="disabled-link" aria-disabled="true" tabindex="-1">Account</a>
+      <a href="https://discord.gg/qXJ9h7DNfs" target="_blank" class="nav-discord">Discord</a>
     </div>
+  </nav>
 
-    <script>
-        const canvas = document.getElementById('simCanvas');
-        const ctx = canvas.getContext('2d');
+  <main class="container">
+    <a href="../catalog.html" class="back-link">&larr; Back to Game Catalog</a>
 
-        const WIDTH = 300;
-        const HEIGHT = 200;
-        const SIZE = WIDTH * HEIGHT;
+    <div class="pt">
+      <div class="pt-row">
+        <label>Global temp (°C) <input type="number" id="amb" value="20"></label>
+        <label>Brush <input type="range" id="brush" min="1" max="15" value="4"> <b id="brushVal" style="color:var(--pt-accent)">4px</b></label>
+        <label>Speed <input type="range" id="speed" min="1" max="4" value="1"></label>
+        <label>Lava type <select id="lavaType"><option value="8">Stone</option><option value="1">Sand</option><option value="13">Glass</option><option value="30">Metal</option><option value="4">Salt</option><option value="32">Uranium</option></select></label>
+        <button id="bPause">Pause</button>
+        <button id="bStep">Step</button>
+        <button id="bView">View: Normal</button>
+        <button id="bClear" class="danger">Clear canvas</button>
+      </div>
+      <div id="toolbar"></div>
+      <div class="pt-hud">
+        <span id="hEl">Hover: Air</span><span id="hTemp">Temp: 20.0°C</span><span id="hDen">Density: 0</span><span id="hCount">Particles: 0</span>
+      </div>
+      <canvas id="sim" width="300" height="200"></canvas>
+      <div class="pt-foot">
+        Left-click paints, right-click erases. Holding still keeps spraying. Material only paints into empty space, so build walls first.<br>
+        Black Holes pull with a 1/r² falloff, heat what spirals in, and swallow everything that reaches the center. Space pauses.
+      </div>
+    </div>
+  </main>
 
-        const grid = new Int32Array(SIZE);
-        const tempGrid = new Float32Array(SIZE);
-        const lifeGrid = new Int32Array(SIZE);
-        const chargeGrid = new Float32Array(SIZE);
-        const vxGrid = new Float32Array(SIZE);
-        const vyGrid = new Float32Array(SIZE);
+  <footer>
+    <p>&copy; 2026 Femcil &bull; Hosted on GitHub Pages</p>
+  </footer>
 
-        let ambientTemp = 20.0;
-        let brushRadius = 4;
-        let mouseGridX = -1;
-        let mouseGridY = -1;
+<script>
+"use strict";
+const W = 300, H = 200, N = W * H;
+const grid = new Uint8Array(N), aux = new Uint8Array(N), life = new Int16Array(N), stamp = new Uint32Array(N);   // aux: for lava, the element it came from
+const temp = new Float32Array(N), charge = new Float32Array(N), vx = new Float32Array(N), vy = new Float32Array(N);
+let lavaOrigin = 8, ambient = 20, frame = 1, running = true, view = 'normal', speed = 1, brushR = 4, drawEl = 1;
+const DX = [-1, 1, 0, 0], DY = [0, 0, -1, 1];
+const $ = (id) => document.getElementById(id);
+const rnd = (n) => Math.floor(Math.random() * n);
 
-        tempGrid.fill(ambientTemp);
+/* ---------- Elements ----------
+   t: a air, p powder, l liquid, g gas, s static solid, x particle
+   d: density (things fall through lighter movable things, gases rise through heavier ones)
+   hi / lo: [temperature, becomes, newLife, newTemp, lavaOrigin] - becomes -1 means explode (newLife = radius)
+   melt: [melts at, lava re-solidifies below, solid it turns back into] - melted things become Lava that remembers its source in aux
+   cond: conducts electricity   flam: ignites from sparks   life: lifetime in frames   slow: chance to skip a move */
+const E = [];
+function def(id, name, c, d, t, o) { E[id] = Object.assign({ n: name, c: c, d: d, t: t }, o || {}); }
+def(0, 'Air', [11, 12, 22], 0, 'a');
+def(1, 'Sand', [255, 200, 100], 20, 'p', { melt: [800, 400, 13] });
+def(2, 'Water', [123, 149, 255], 10, 'l', { hi: [100, 9, 150], lo: [0, 10], cond: 1, flow: 4 });
+def(3, 'Wall', [80, 85, 120], 1000, 's');
+def(4, 'Salt', [240, 240, 245], 18, 'p', { melt: [800, 600, 4] });
+def(5, 'Wood', [139, 90, 43], 100, 's', { hi: [250, 6, 40, 500], flam: 1, cond: 1 });
+def(6, 'Fire', [255, 90, 30], -10, 'g', { life: 25 });
+def(7, 'Lava', [255, 60, 0], 35, 'l', { flow: 2, hot: 1 });
+def(8, 'Stone', [120, 120, 130], 100, 's', { melt: [1100, 700, 8] });
+def(9, 'Water Vapor', [200, 210, 230, 180], -5, 'g', { life: 140, lo: [70, 2, 0] });
+def(10, 'Ice', [180, 230, 255, 220], 9, 's', { hi: [0, 2, 0] });
+def(11, 'Salt Water', [100, 130, 220], 12, 'l', { hi: [105, 9, 150], lo: [-15, 10, 0], cond: 1, flow: 4 });
+def(13, 'Glass', [200, 230, 245, 220], 100, 's', { melt: [900, 400, 13] });
+def(30, 'Metal', [190, 200, 210], 200, 's', { melt: [1500, 1000, 30], cond: 1 });
+def(31, 'Electricity Tool', [255, 255, 120], 0, 'a');
+def(32, 'Uranium', [70, 220, 90], 60, 'p', { melt: [1100, 800, 32] });
+def(33, 'Neutron', [100, 255, 255], -50, 'x', { life: 180 });
+def(34, 'Proton', [255, 100, 200], -50, 'x', { life: 180 });
+def(35, 'Electron', [100, 180, 255], -50, 'x', { life: 180 });
+def(36, 'Lithium', [210, 220, 230], 21, 'p', { cond: 1 });
+def(37, 'Acid', [100, 255, 100, 230], 15, 'l', { flow: 3 });
+def(38, 'Oil', [80, 60, 40], 7, 'l', { hi: [120, 6, 70, 900], flam: 1, flow: 3 });
+def(39, 'C-4', [180, 170, 120], 150, 's', { cond: 1, flam: 1 });
+def(40, 'Black Hole', [255, 0, 120], 9999, 's');
+// New content
+def(41, 'Plant', [60, 180, 70], 100, 's', { hi: [200, 6, 35, 500], flam: 1 });
+def(42, 'Seed', [190, 160, 90], 19, 'p');
+def(43, 'Dirt', [110, 75, 45], 22, 'p');
+def(44, 'Mud', [80, 55, 35], 24, 'p', { slow: 0.5, hi: [100, 43] });
+def(45, 'Clone', [215, 170, 40], 100, 's');
+def(46, 'Void', [60, 20, 90], 100, 's');
+def(47, 'Snow', [245, 248, 255], 8, 'p', { slow: 0.5, hi: [0, 2, 0] });
+def(48, 'Smoke', [70, 70, 80, 150], -3, 'g', { life: 160 });
+def(49, 'Methane', [160, 210, 160, 120], -4, 'g', { hi: [150, 6, 14, 800], flam: 1 });
+def(50, 'Gunpowder', [90, 90, 100], 19, 'p', { hi: [200, -1, 5, 1500], flam: 1 });
+def(51, 'Thermite', [200, 90, 60], 25, 'p', { hi: [300, 7, 0, 2600, 30] });   // thermite burns into molten iron
+def(52, 'Plasma', [210, 120, 255, 220], -8, 'g', { life: 80 });
+def(53, 'Coal', [35, 35, 40], 30, 'p', { hi: [250, 6, 220, 700], flam: 1 });
+const LAVA = { 8: [255, 60, 0], 1: [255, 170, 50], 13: [255, 170, 50], 30: [255, 205, 120], 4: [255, 235, 200], 32: [150, 255, 90] };   // glow color per source material
+const T0 = { 6: 400, 7: 1000, 10: -20, 40: 5000, 47: -10, 52: 3000 };       // starting temperatures
+const ACID = new Uint8Array(256); [1, 4, 5, 8, 30, 32, 36, 39, 41, 42, 43, 44, 53].forEach(id => ACID[id] = 1);
+const GROUPS = [
+  ['BASIC & CHEMICAL', [1, 2, 4, 11, 38, 37, 13, 5, 6, 7, 8, 9, 10, 3, 0]],
+  ['NATURE', [43, 44, 42, 41, 47, 53]],
+  ['EXPLOSIVES & GASES', [50, 39, 51, 49, 48, 52]],
+  ['ELECTRICAL & NUCLEAR', [30, 31, 36, 32, 40, 33, 34, 35]],
+  ['SPECIAL', [45, 46]],
+  ['TOOLS', [101, 102, 103]]
+];
+const TOOLNAMES = { 0: 'Eraser', 101: 'Heat Tool', 102: 'Cool Tool', 103: 'Wind Tool' };
 
-        const ELEMENT_NAMES = {
-            0: "Air", 1: "Sand", 2: "Water", 3: "Wall", 4: "Salt", 5: "Wood",
-            6: "Fire", 7: "Lava", 8: "Stone", 9: "Water Vapor", 10: "Ice",
-            11: "Salt Water", 12: "Molten Glass", 13: "Glass",
-            30: "Metal", 31: "Electricity Tool", 32: "Uranium", 33: "Neutron",
-            34: "Proton", 35: "Electron", 36: "Lithium", 37: "Acid",
-            38: "Oil", 39: "C-4", 40: "Black Hole"
-        };
+/* ---------- Cell helpers ---------- */
+function elName(i) { const e = grid[i]; return e === 7 ? 'Lava (' + E[aux[i] || 8].n.toLowerCase() + ')' : E[e].n; }
+function solidOf(i) { const m = E[aux[i]].melt; return m ? m[2] : 8; }                   // what this lava hardens into
+function lavaTemp() { const m = E[lavaOrigin].melt; return Math.max(1000, (m ? m[0] : 1000) + 150); }
+function isCond(i) { const e = grid[i]; return !!E[e].cond || (e === 7 && aux[i] === 30); }   // molten metal still conducts
+function lifeFor(e) { const l = E[e].life; return l ? Math.round(l * (0.7 + 0.6 * Math.random())) : 0; }
+function put(i, e, tmp, lf) {
+  grid[i] = e; temp[i] = tmp !== undefined ? tmp : (T0[e] !== undefined ? T0[e] : ambient);
+  life[i] = lf !== undefined ? lf : lifeFor(e); charge[i] = 0; vx[i] = 0; vy[i] = 0; aux[i] = 0;
+  if (E[e].t === 'x') { vx[i] = (Math.random() - 0.5) * 4; vy[i] = (Math.random() - 0.5) * 4; }
+}
+function mv(a, b) {      // swap two cells completely; both are marked so nothing moves twice in a frame
+  let t = grid[a]; grid[a] = grid[b]; grid[b] = t;
+  t = life[a]; life[a] = life[b]; life[b] = t;
+  t = aux[a]; aux[a] = aux[b]; aux[b] = t;
+  let f = temp[a]; temp[a] = temp[b]; temp[b] = f;
+  f = charge[a]; charge[a] = charge[b]; charge[b] = f;
+  f = vx[a]; vx[a] = vx[b]; vx[b] = f;
+  f = vy[a]; vy[a] = vy[b]; vy[b] = f;
+  stamp[a] = frame; stamp[b] = frame;
+}
+function canSink(e, t) { const o = grid[t]; if (o === 0) return true; const O = E[o]; return (O.t === 'p' || O.t === 'l' || O.t === 'g') && O.d < E[e].d; }
+function canRise(e, t) { const o = grid[t]; if (o === 0) return true; const O = E[o]; return (O.t === 'p' || O.t === 'l' || O.t === 'g') && O.d > E[e].d; }
+function explode(cx, cy, r, tmp) {
+  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    if (dx * dx + dy * dy > r * r) continue;
+    const x = cx + dx, y = cy + dy;
+    if (x < 0 || y < 0 || x >= W || y >= H) continue;
+    const i = y * W + x;
+    if (grid[i] !== 3 && grid[i] !== 40) put(i, 6, tmp, 30 + rnd(40));
+  }
+}
+function fission(x, y) {
+  explode(x, y, 10, 2500);
+  for (let n = 0; n < 3; n++) {      // neutrons fly out of the blast and can start a chain reaction
+    const a = Math.random() * 6.283, px = Math.round(x + Math.cos(a) * 12), py = Math.round(y + Math.sin(a) * 12);
+    if (px < 0 || py < 0 || px >= W || py >= H) continue;
+    const i = py * W + px;
+    if (grid[i] === 0) { put(i, 33); vx[i] = Math.cos(a) * 2.5; vy[i] = Math.sin(a) * 2.5; }
+  }
+}
+function becomes(i, rule, x, y) {
+  const old = grid[i];
+  if (rule[1] < 0) { explode(x, y, rule[2], rule[3]); return; }
+  grid[i] = rule[1]; life[i] = rule[2] > 0 ? rule[2] : lifeFor(rule[1]);
+  if (rule[3] !== undefined) temp[i] = rule[3];
+  charge[i] = 0; vx[i] = 0; vy[i] = 0;
+  aux[i] = rule[1] === 7 ? (rule[4] !== undefined ? rule[4] : 8) : 0;
+  if (old === 11 && rule[1] === 10) {          // freezing salt water leaves salt behind
+    const nx = x + (Math.random() < 0.5 ? 1 : -1);
+    if (nx >= 0 && nx < W && grid[y * W + nx] === 0) put(y * W + nx, 4);
+  }
+}
 
-        const DENSITIES = {
-            0: 0, 9: -5, 6: -10, 33: -50, 34: -50, 35: -50,
-            38: 7, 10: 9, 2: 10, 11: 12, 37: 15, 4: 18, 1: 20, 36: 21,
-            12: 30, 7: 35, 32: 60, 5: 100, 8: 100, 13: 100, 39: 150, 30: 200, 3: 1000, 40: 9999
-        };
+/* ---------- Black holes ---------- */
+const bhX = [], bhY = [];
+let bhN = 0;
+function bhPull(i, x, y, e) {
+  let best = 1e9, bx = 0, by = 0;
+  for (let k = 0; k < bhN; k++) { const dx = bhX[k] - x, dy = bhY[k] - y, d = dx * dx + dy * dy; if (d < best) { best = d; bx = dx; by = dy; } }
+  if (best > 1225) return false;
+  const dist = Math.sqrt(best);
+  if (dist <= 2) { grid[i] = 0; charge[i] = 0; return true; }                       // event horizon
+  if (dist <= 8) temp[i] = Math.min(4000, temp[i] + 120);                            // accretion disk heating
+  if (Math.random() < Math.min(1, 120 / best)) {                                      // pull strength falls off as 1/r²
+    const nx = x + Math.sign(bx), ny = y + Math.sign(by), t = ny * W + nx;
+    if (nx >= 0 && nx < W && ny >= 0 && ny < H && stamp[t] !== frame) {
+      const o = grid[t];
+      if (o === 0 || (o !== 40 && E[o].t !== 's')) { mv(i, t); return true; }       // never drags walls or other solids around
+    }
+  }
+  return false;
+}
 
-        const COLORS = {
-            0:  [11, 12, 22, 255],
-            1:  [255, 200, 100, 255],
-            2:  [123, 149, 255, 255],
-            3:  [80, 85, 120, 255],
-            4:  [240, 240, 245, 255],
-            5:  [139, 90, 43, 255],
-            6:  [255, 90, 30, 255],
-            7:  [255, 60, 0, 255],
-            8:  [120, 120, 130, 255],
-            9:  [200, 210, 230, 180],
-            10: [180, 230, 255, 220],
-            11: [100, 130, 220, 255],
-            12: [255, 170, 50, 255],
-            13: [200, 230, 245, 220],
-            30: [190, 200, 210, 255],
-            32: [70, 220, 90, 255],
-            33: [100, 255, 255, 255],
-            34: [255, 100, 200, 255],
-            35: [100, 180, 255, 255],
-            36: [210, 220, 230, 255],
-            37: [100, 255, 100, 230],
-            38: [80, 60, 40, 255],
-            39: [180, 170, 120, 255],
-            40: [255, 0, 120, 255] // Hot pink event horizon outline
-        };
+/* ---------- Per-cell behaviour ---------- */
+function particle(i, x, y, e) {
+  if (e === 33) {
+    for (let k = 0; k < 4; k++) {
+      const nx = x + DX[k], ny = y + DY[k]; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+      const o = grid[ny * W + nx];
+      if (o === 32) { grid[i] = 0; fission(nx, ny); return; }
+      if (o === 39) { explode(x, y, 12, 2200); return; }
+    }
+  }
+  if (Math.round(vx[i]) === 0 && Math.round(vy[i]) === 0) { vx[i] = (Math.random() - 0.5) * 4; vy[i] = (Math.random() - 0.5) * 4; }
+  const nx = Math.round(x + vx[i]), ny = Math.round(y + vy[i]);
+  if (nx < 0 || nx >= W) { vx[i] = -vx[i]; return; }
+  if (ny < 0 || ny >= H) { vy[i] = -vy[i]; return; }
+  const t = ny * W + nx, o = grid[t];
+  if (o === 0) mv(i, t);
+  else if (e === 33 && o === 32) { grid[i] = 0; fission(nx, ny); }
+  else if (e === 35 && isCond(t)) { charge[t] = Math.min(150, charge[t] + 60); grid[i] = 0; }   // electrons feed current into conductors
+  else { vx[i] = -vx[i] + (Math.random() - 0.5); vy[i] = -vy[i] + (Math.random() - 0.5); }
+}
 
-        let currentElement = 1;
-        let isDrawing = false;
-
-        function updateAmbientTemp(val) {
-            const parsed = parseFloat(val);
-            if (!isNaN(parsed)) ambientTemp = parsed;
+function react(i, x, y, e) {
+  let k, nx, ny, n, o;
+  switch (e) {
+    case 6: case 52: {                                           // fire and plasma heat everything touching them
+      const heat = e === 6 ? 25 : 40;
+      for (k = 0; k < 4; k++) {
+        nx = x + DX[k]; ny = y + DY[k]; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+        n = ny * W + nx; o = grid[n];
+        if (o !== 0) {
+          temp[n] = Math.min(3000, temp[n] + heat);
+          const O = E[o];
+          if (O.flam && Math.random() < (e === 6 ? 0.5 : 0.7)) { const th = O.hi ? O.hi[0] : 300; if (temp[n] <= th) temp[n] = th + 5; }   // flames catch fuel quickly
+          if (e === 6 && (o === 2 || o === 11) && Math.random() < 0.3) { put(i, 9, 120, 100); return true; }   // water puts fire out
         }
-
-        function updateBrushSize(val) {
-            brushRadius = parseInt(val, 10);
-            document.getElementById('brush-size-val').textContent = `${brushRadius}px`;
+      }
+      break;
+    }
+    case 7:                                                      // lava + water = stone + steam
+      for (k = 0; k < 4; k++) {
+        nx = x + DX[k]; ny = y + DY[k]; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+        n = ny * W + nx; o = grid[n];
+        if (o === 2 || o === 11) { const sol = solidOf(i); put(n, 9, 150, 150); put(i, sol, 600); return true; }
+      }
+      break;
+    case 37:                                                     // acid eats most things
+      for (k = 0; k < 4; k++) {
+        nx = x + DX[k]; ny = y + DY[k]; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+        n = ny * W + nx; o = grid[n];
+        if (ACID[o]) { put(n, 9, temp[n] + 60, 80); grid[i] = 0; return true; }
+        if (o === 3 || o === 13) { grid[i] = 0; return true; }
+      }
+      break;
+    case 4:                                                      // salt dissolves into salt water
+      for (k = 0; k < 4; k++) {
+        nx = x + DX[k]; ny = y + DY[k]; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+        n = ny * W + nx;
+        if (grid[n] === 2 && Math.random() < 0.04) { grid[n] = 11; grid[i] = 11; return true; }
+      }
+      break;
+    case 42: case 41: case 43:                                   // seeds sprout, plants spread through water, dirt soaks it up
+      for (k = 0; k < 4; k++) {
+        nx = x + DX[k]; ny = y + DY[k]; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+        n = ny * W + nx;
+        if (grid[n] !== 2) continue;
+        if (e === 42 && Math.random() < 0.03) { grid[i] = 41; grid[n] = 41; return true; }
+        if (e === 41 && Math.random() < 0.012) grid[n] = 41;
+        if (e === 43 && Math.random() < 0.03) { grid[i] = 44; grid[n] = 0; return true; }
+      }
+      break;
+    case 39:
+      if (temp[i] > 300 || charge[i] > 5) { explode(x, y, 12, 2200); return true; }
+      break;
+    case 32:                                                     // uranium is slowly radioactive
+      temp[i] += 0.15;
+      if (Math.random() < 0.0003) { k = rnd(4); nx = x + DX[k]; ny = y + DY[k]; if (nx >= 0 && ny >= 0 && nx < W && ny < H && grid[ny * W + nx] === 0) put(ny * W + nx, 33); }
+      break;
+    case 45:                                                     // clone copies the first thing it touches
+      if (!life[i]) {
+        for (k = 0; k < 4; k++) {
+          nx = x + DX[k]; ny = y + DY[k]; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+          o = grid[ny * W + nx];
+          if (o !== 0 && o !== 3 && o !== 40 && o !== 45 && o !== 46 && E[o].t !== 'x') { life[i] = o; break; }
         }
+      } else if (Math.random() < 0.4) {
+        k = rnd(4); nx = x + DX[k]; ny = y + DY[k];
+        if (nx >= 0 && ny >= 0 && nx < W && ny < H && grid[ny * W + nx] === 0) put(ny * W + nx, life[i]);
+      }
+      return true;
+    case 46:                                                     // void deletes everything except walls
+      for (k = 0; k < 4; k++) {
+        nx = x + DX[k]; ny = y + DY[k]; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+        n = ny * W + nx; o = grid[n];
+        if (o !== 0 && o !== 3 && o !== 46 && o !== 40) { grid[n] = 0; charge[n] = 0; }
+      }
+      return true;
+  }
+  return false;
+}
 
-        function setElement(id) {
-            currentElement = id;
-            document.querySelectorAll('.toolbar-group button').forEach(b => b.classList.remove('active'));
-            const activeBtn = document.getElementById(`btn-${id}`);
-            if (activeBtn) activeBtn.classList.add('active');
-        }
+function process(i, x, y, e) {
+  const D = E[e];
+  if (bhN && e !== 3 && e !== 40 && bhPull(i, x, y, e)) return;
+  if (e === 40) return;
 
-        function clearGrid() {
-            grid.fill(0);
-            tempGrid.fill(ambientTemp);
-            lifeGrid.fill(0);
-            chargeGrid.fill(0);
-            vxGrid.fill(0);
-            vyGrid.fill(0);
-        }
+  if (D.life) {
+    if (--life[i] <= 0) { if (e === 6 && Math.random() < 0.35) put(i, 48, temp[i]); else grid[i] = 0; charge[i] = 0; return; }
+  }
+  if (D.t === 'x') { particle(i, x, y, e); return; }
 
-        canvas.addEventListener('mousedown', (e) => { isDrawing = true; trackMouse(e); applyBrush(); });
-        window.addEventListener('mouseup', () => { isDrawing = false; });
-        canvas.addEventListener('mousemove', (e) => { trackMouse(e); if (isDrawing) applyBrush(); });
-        canvas.addEventListener('mouseleave', () => { mouseGridX = -1; mouseGridY = -1; updateInspectorHUD(); });
+  const t = temp[i];
+  if (D.melt && t > D.melt[0]) { grid[i] = 7; aux[i] = e; life[i] = 0; charge[i] = 0; return; }       // melts into lava that remembers what it was
+  if (e === 7) { const m = E[aux[i]].melt; if (t < (m ? m[1] : 700)) { grid[i] = m ? m[2] : 8; aux[i] = 0; return; } }   // and hardens back into it
+  if (D.hi && t > D.hi[0]) { becomes(i, D.hi, x, y); return; }
+  if (D.lo && t < D.lo[0]) { becomes(i, D.lo, x, y); return; }
+  if (react(i, x, y, e)) return;
 
-        function trackMouse(e) {
-            const rect = canvas.getBoundingClientRect();
-            mouseGridX = Math.floor((e.clientX - rect.left) / (rect.width / WIDTH));
-            mouseGridY = Math.floor((e.clientY - rect.top) / (rect.height / HEIGHT));
-            updateInspectorHUD();
-        }
+  // electricity
+  const ch = charge[i];
+  if (e === 36) {
+    if (ch >= 100) { explode(x, y, 8, 2000); return; }
+    if (ch > 0) {
+      temp[i] += 2;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const nx = x + dx, ny = y + dy; if ((dx === 0 && dy === 0) || nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+        const n = ny * W + nx;
+        if (grid[n] === 36 && charge[n] < charge[i]) { const tr = charge[i] * 0.35; charge[n] += tr; charge[i] -= tr * 0.1; }
+      }
+      charge[i] = Math.max(0, charge[i] - 0.2);
+    }
+  } else if (ch > 10) {
+    temp[i] += 8;
+    if (D.flam && D.hi && e !== 39) { becomes(i, D.hi, x, y); return; }
+    if (e === 2 || e === 11) temp[i] += 25;
+    for (let k = 0; k < 4; k++) {
+      const nx = x + DX[k], ny = y + DY[k]; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+      const n = ny * W + nx;
+      if (charge[n] < 10 && isCond(n)) charge[n] = ch * 0.9;
+    }
+    charge[i] -= 35;
+  } else charge[i] = 0;
 
-        function updateInspectorHUD() {
-            const hoverElemEl = document.getElementById('hover-element');
-            const hoverTempEl = document.getElementById('hover-temp');
-            const hoverDensityEl = document.getElementById('hover-density');
+  // movement
+  if (D.slow && Math.random() < D.slow) return;
+  const dir = Math.random() < 0.5 ? 1 : -1, nx = x + dir;
+  switch (D.t) {
+    case 'p':
+      if (y < H - 1) { const b = i + W; if (canSink(e, b)) mv(i, b); else if (nx >= 0 && nx < W && canSink(e, b + dir)) mv(i, b + dir); }
+      break;
+    case 'l': {
+      if (y < H - 1) {
+        const b = i + W;
+        if (canSink(e, b)) { mv(i, b); break; }
+        if (nx >= 0 && nx < W && canSink(e, b + dir)) { mv(i, b + dir); break; }
+      }
+      let dest = -1;
+      for (let s = 1; s <= (D.flow || 2); s++) {
+        const sx = x + dir * s; if (sx < 0 || sx >= W) break;
+        if (canSink(e, i + dir * s)) dest = i + dir * s; else break;
+      }
+      if (dest >= 0) mv(i, dest);
+      break;
+    }
+    case 'g':
+      if (y > 0 && !(e === 6 && Math.random() < 0.35)) {
+        const a = i - W;
+        if (canRise(e, a)) { mv(i, a); break; }
+        if (nx >= 0 && nx < W && canRise(e, a + dir)) { mv(i, a + dir); break; }
+      }
+      if (nx >= 0 && nx < W && grid[i + dir] === 0 && Math.random() < 0.6) mv(i, i + dir);
+      break;
+  }
+}
 
-            if (mouseGridX >= 0 && mouseGridX < WIDTH && mouseGridY >= 0 && mouseGridY < HEIGHT) {
-                const idx = mouseGridY * WIDTH + mouseGridX;
-                const elem = grid[idx];
-                const temp = tempGrid[idx].toFixed(1);
-                const density = DENSITIES[elem] || 0;
-                const volts = chargeGrid[idx] > 0 ? ` [${Math.floor(chargeGrid[idx])}V]` : "";
+function step() {
+  frame++;
+  bhN = 0;
+  for (let i = 0; i < N; i++) if (grid[i] === 40) { bhX[bhN] = i % W; bhY[bhN] = (i / W) | 0; bhN++; }
+  for (let y = H - 1; y >= 0; y--) {
+    const ltr = Math.random() < 0.5;
+    for (let k = 0; k < W; k++) {
+      const x = ltr ? k : W - 1 - k, i = y * W + x, e = grid[i];
+      if (e === 0) { if (charge[i] > 0) charge[i] = Math.max(0, charge[i] - 25); continue; }
+      if (stamp[i] === frame) continue;
+      process(i, x, y, e);
+    }
+  }
+  for (let y = 0; y < H; y++) {                                       // heat conduction + drift toward room temperature (edges included)
+    for (let x = 0; x < W; x++) {
+      const i = y * W + x;
+      if (grid[i] === 0) { temp[i] += (ambient - temp[i]) * 0.03; continue; }
+      temp[i] += (ambient - temp[i]) * 0.002;
+      if (x < W - 1 && grid[i + 1] !== 0) { const r = i + 1, a = (temp[i] + temp[r]) / 2; temp[i] += (a - temp[i]) * 0.05; temp[r] += (a - temp[r]) * 0.05; }
+      if (y < H - 1 && grid[i + W] !== 0) { const b = i + W, a = (temp[i] + temp[b]) / 2; temp[i] += (a - temp[i]) * 0.05; temp[b] += (a - temp[b]) * 0.05; }
+    }
+  }
+}
 
-                hoverElemEl.textContent = `Hover: ${(ELEMENT_NAMES[elem] || "Unknown")}${volts}`;
-                hoverTempEl.textContent = `Temp: ${temp}°C`;
-                hoverDensityEl.textContent = `Density: ${density}`;
-            } else {
-                hoverElemEl.textContent = `Hover: Air`;
-                hoverTempEl.textContent = `Temp: ${ambientTemp.toFixed(1)}°C`;
-                hoverDensityEl.textContent = `Density: 0`;
-            }
-        }
+/* ---------- Painting & tools ---------- */
+function applyBrush(cx, cy, el) {
+  for (let dy = -brushR; dy <= brushR; dy++) for (let dx = -brushR; dx <= brushR; dx++) {
+    if (dx * dx + dy * dy > brushR * brushR) continue;
+    const x = cx + dx, y = cy + dy;
+    if (x < 0 || y < 0 || x >= W || y >= H) continue;
+    const i = y * W + x;
+    if (el === 101) temp[i] = Math.min(2500, temp[i] + 15);
+    else if (el === 102) temp[i] = Math.max(-100, temp[i] - 10);
+    else if (el === 103) { if (grid[i] !== 0 && E[grid[i]].t !== 's' && x < W - 2 && grid[i + 2] === 0 && stamp[i] !== frame) mv(i, i + 2); }
+    else if (el === 31) { if (grid[i] !== 0) charge[i] = Math.min(150, charge[i] + 30); }
+    else if (el === 0) { grid[i] = 0; temp[i] = ambient; life[i] = 0; aux[i] = 0; charge[i] = 0; vx[i] = 0; vy[i] = 0; }
+    else if (grid[i] === 0 && (E[el].t === 's' || Math.random() < 0.35)) { put(i, el, el === 7 ? lavaTemp() : undefined); if (el === 7) aux[i] = lavaOrigin; }
+  }
+}
+function brushLine(x0, y0, x1, y1, el) {
+  const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1);
+  for (let s = 0; s <= n; s++) applyBrush(Math.round(x0 + (x1 - x0) * s / n), Math.round(y0 + (y1 - y0) * s / n), el);
+}
+function clearAll() { grid.fill(0); aux.fill(0); life.fill(0); charge.fill(0); vx.fill(0); vy.fill(0); temp.fill(ambient); }
 
-        function applyBrush() {
-            if (mouseGridX < 0 || mouseGridY < 0) return;
+/* ---------- Rendering ---------- */
+const ctx = $('sim').getContext('2d');
+const img = ctx.createImageData(W, H);
+const BG = [11, 12, 22];
+const HEAT = [[-50, 20, 40, 160], [20, 30, 120, 200], [100, 60, 200, 120], [300, 240, 220, 60], [800, 255, 100, 30], [1500, 255, 40, 40], [2500, 255, 255, 255]];
+function heatColor(t, out) {
+  if (t <= HEAT[0][0]) { out[0] = HEAT[0][1]; out[1] = HEAT[0][2]; out[2] = HEAT[0][3]; return; }
+  for (let k = 1; k < HEAT.length; k++) {
+    if (t <= HEAT[k][0]) {
+      const a = HEAT[k - 1], b = HEAT[k], f = (t - a[0]) / (b[0] - a[0]);
+      out[0] = a[1] + (b[1] - a[1]) * f; out[1] = a[2] + (b[2] - a[2]) * f; out[2] = a[3] + (b[3] - a[3]) * f; return;
+    }
+  }
+  out[0] = 255; out[1] = 255; out[2] = 255;
+}
+const tmpc = [0, 0, 0];
+function render() {
+  const d = img.data;
+  for (let i = 0; i < N; i++) {
+    const e = grid[i], D = E[e], c = D.c, p = i * 4;
+    let r, g, b, a = c[3] === undefined ? 255 : c[3];
+    if (view === 'heat') {
+      heatColor(temp[i], tmpc); r = tmpc[0]; g = tmpc[1]; b = tmpc[2];
+      if (e === 0) { r *= 0.45; g *= 0.45; b *= 0.45; }
+      a = 255;
+    } else {
+      r = c[0]; g = c[1]; b = c[2];
+      if (e === 6) { const l = life[i]; g = Math.min(255, 50 + l * 6 + Math.random() * 50); b = 20; a = Math.min(255, 110 + l * 10); }
+      else if (e === 52) { r = 170 + Math.random() * 85; g = 90 + Math.random() * 80; b = 255; }
+      else if (e === 7) {                                                              // lava color follows its source and dims as it cools
+        const lc = LAVA[aux[i]] || LAVA[8], m = E[aux[i]].melt, k = 0.45 + 0.55 * Math.max(0, Math.min(1, (temp[i] - (m ? m[1] : 700)) / 250));
+        r = lc[0] * k; g = lc[1] * k; b = lc[2] * k;
+      }
+      else if (e !== 0 && D.t !== 'g' && !D.hot && temp[i] > 480) {                    // red-hot glow on anything that is cooking
+        const k = Math.min(1, (temp[i] - 480) / 700);
+        r += (255 - r) * k; g += (120 - g) * k * 0.8; b += (20 - b) * k * 0.6;
+      }
+      const ch = charge[i];
+      if (ch > 0) { const k = Math.min(1, ch / 100); r += (255 - r) * k; g += (255 - g) * k; b += (120 - b) * k; }
+    }
+    if (a < 255) { const k = a / 255; r = r * k + BG[0] * (1 - k); g = g * k + BG[1] * (1 - k); b = b * k + BG[2] * (1 - k); }   // blend translucent materials onto the background
+    d[p] = r; d[p + 1] = g; d[p + 2] = b; d[p + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+}
 
-            for (let dy = -brushRadius; dy <= brushRadius; dy++) {
-                for (let dx = -brushRadius; dx <= brushRadius; dx++) {
-                    if (dx * dx + dy * dy > brushRadius * brushRadius) continue;
+/* ---------- UI ---------- */
+let mx = -1, my = -1, lx = -1, ly = -1, drawing = false, btn = 0, count = 0;
+function setElement(id) {
+  drawEl = id;
+  document.querySelectorAll('#toolbar button').forEach(b => b.classList.toggle('active', +b.dataset.id === id));
+}
+(function buildToolbar() {
+  const tb = $('toolbar');
+  GROUPS.forEach(g => {
+    const lab = document.createElement('div'); lab.className = 'pt-label'; lab.textContent = g[0]; tb.appendChild(lab);
+    const row = document.createElement('div'); row.className = 'pt-group';
+    g[1].forEach(id => {
+      const b = document.createElement('button'); b.dataset.id = id; b.textContent = TOOLNAMES[id] || E[id].n;
+      b.addEventListener('click', () => setElement(id)); row.appendChild(b);
+    });
+    tb.appendChild(row);
+  });
+  setElement(1);
+})();
+function track(e) {
+  const r = $('sim').getBoundingClientRect();
+  mx = Math.floor((e.clientX - r.left) / (r.width / W)); my = Math.floor((e.clientY - r.top) / (r.height / H));
+}
+const cv = $('sim');
+cv.addEventListener('pointerdown', e => { e.preventDefault(); cv.setPointerCapture(e.pointerId); drawing = true; btn = e.button; track(e); lx = mx; ly = my; });
+cv.addEventListener('pointermove', track);
+cv.addEventListener('pointerup', () => { drawing = false; });
+cv.addEventListener('pointercancel', () => { drawing = false; });
+cv.addEventListener('pointerleave', () => { if (!drawing) { mx = -1; my = -1; } });
+cv.addEventListener('contextmenu', e => e.preventDefault());
+$('amb').addEventListener('change', function () { const v = parseFloat(this.value); if (!isNaN(v)) ambient = v; });
+$('brush').addEventListener('input', function () { brushR = +this.value; $('brushVal').textContent = brushR + 'px'; });
+$('lavaType').addEventListener('change', function () { lavaOrigin = +this.value; });
+$('speed').addEventListener('input', function () { speed = +this.value; });
+$('bPause').addEventListener('click', togglePause);
+$('bStep').addEventListener('click', () => { if (!running) step(); });
+$('bView').addEventListener('click', function () { view = view === 'normal' ? 'heat' : 'normal'; this.textContent = 'View: ' + (view === 'normal' ? 'Normal' : 'Heat map'); });
+$('bClear').addEventListener('click', clearAll);
+function togglePause() { running = !running; $('bPause').textContent = running ? 'Pause' : 'Play'; }
+window.addEventListener('keydown', e => { if (e.code === 'Space' && e.target === document.body) { e.preventDefault(); togglePause(); } });
 
-                    const nx = mouseGridX + dx;
-                    const ny = mouseGridY + dy;
-                    if (nx >= 0 && nx < WIDTH && ny >= 0 && ny < HEIGHT) {
-                        const idx = ny * WIDTH + nx;
-
-                        if (currentElement === 101) {
-                            tempGrid[idx] = Math.min(2500, tempGrid[idx] + 80);
-                        } else if (currentElement === 102) {
-                            tempGrid[idx] = Math.max(-100, tempGrid[idx] - 40);
-                        } else if (currentElement === 103) {
-                            if (nx < WIDTH - 2 && grid[idx] !== 3 && grid[idx] !== 30 && grid[idx] !== 40) {
-                                const targetIdx = ny * WIDTH + (nx + 2);
-                                if (grid[targetIdx] === 0) {
-                                    grid[targetIdx] = grid[idx];
-                                    grid[idx] = 0;
-                                    chargeGrid[targetIdx] = chargeGrid[idx];
-                                    chargeGrid[idx] = 0;
-                                }
-                            }
-                        } else if (currentElement === 31) {
-                            if (grid[idx] !== 0) {
-                                chargeGrid[idx] += 30;
-                            }
-                        } else {
-                            grid[idx] = currentElement;
-                            tempGrid[idx] = currentElement === 6 ? 400 : (currentElement === 7 || currentElement === 12 ? 1000 : (currentElement === 10 ? -20 : (currentElement === 40 ? 5000 : ambientTemp)));
-                            lifeGrid[idx] = currentElement === 6 ? 25 : (currentElement === 9 ? 140 : 0);
-                            chargeGrid[idx] = 0;
-
-                            if (currentElement >= 33 && currentElement <= 35) {
-                                vxGrid[idx] = (Math.random() - 0.5) * 4;
-                                vyGrid[idx] = (Math.random() - 0.5) * 4;
-                                lifeGrid[idx] = 180;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        function swap(idxA, idxB) {
-            const tElem = grid[idxA]; grid[idxA] = grid[idxB]; grid[idxB] = tElem;
-            const tTemp = tempGrid[idxA]; tempGrid[idxA] = tempGrid[idxB]; tempGrid[idxB] = tTemp;
-            const tLife = lifeGrid[idxA]; lifeGrid[idxA] = lifeGrid[idxB]; lifeGrid[idxB] = tLife;
-            const tCharge = chargeGrid[idxA]; chargeGrid[idxA] = chargeGrid[idxB]; chargeGrid[idxB] = tCharge;
-            const tVx = vxGrid[idxA]; vxGrid[idxA] = vxGrid[idxB]; vxGrid[idxB] = tVx;
-            const tVy = vyGrid[idxA]; vyGrid[idxA] = vyGrid[idxB]; vyGrid[idxB] = tVy;
-        }
-
-        function triggerExplosion(centerX, centerY, radius, maxTemp) {
-            for (let dy = -radius; dy <= radius; dy++) {
-                for (let dx = -radius; dx <= radius; dx++) {
-                    if (dx * dx + dy * dy <= radius * radius) {
-                        const ex = centerX + dx;
-                        const ey = centerY + dy;
-                        if (ex >= 0 && ex < WIDTH && ey >= 0 && ey < HEIGHT) {
-                            const eIdx = ey * WIDTH + ex;
-                            if (grid[eIdx] !== 3 && grid[eIdx] !== 40) {
-                                grid[eIdx] = 6;
-                                tempGrid[eIdx] = maxTemp;
-                                lifeGrid[eIdx] = 30 + Math.random() * 40;
-                                chargeGrid[eIdx] = 0;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        function updateSimulation() {
-            // Collect active Black Hole positions to construct 360-degree vector fields
-            const blackHoles = [];
-            for (let i = 0; i < SIZE; i++) {
-                if (grid[i] === 40) {
-                    blackHoles.push({ x: i % WIDTH, y: Math.floor(i / WIDTH) });
-                }
-            }
-
-            for (let y = HEIGHT - 1; y >= 0; y--) {
-                const leftToRight = Math.random() < 0.5;
-                for (let i = 0; i < WIDTH; i++) {
-                    const x = leftToRight ? i : (WIDTH - 1 - i);
-                    const idx = y * WIDTH + x;
-                    const elem = grid[idx];
-
-                    if (elem === 0) {
-                        if (chargeGrid[idx] > 0) chargeGrid[idx] -= 25;
-                        continue;
-                    }
-
-                    // 1. BLACK HOLE RADIAL GRAVITY & ACCRETION SWALLOWING
-                    if (blackHoles.length > 0 && elem !== 40 && elem !== 3) {
-                        let closestBh = null;
-                        let minDistSq = Infinity;
-
-                        for (let bh of blackHoles) {
-                            const dx = bh.x - x;
-                            const dy = bh.y - y;
-                            const distSq = dx * dx + dy * dy;
-                            if (distSq < minDistSq) {
-                                minDistSq = distSq;
-                                closestBh = { bh, dx, dy, distSq };
-                            }
-                        }
-
-                        // Attraction Radius: 35 pixels
-                        if (closestBh && closestBh.distSq <= 1225) {
-                            const dist = Math.sqrt(closestBh.distSq);
-                            
-                            // Horizon Swallow (Radius <= 2px)
-                            if (dist <= 2.0) {
-                                grid[idx] = 0;
-                                chargeGrid[idx] = 0;
-                                continue;
-                            }
-
-                            // Accretion Disk Friction Heating (Radius <= 8px)
-                            if (dist <= 8.0) {
-                                tempGrid[idx] += 120;
-                            }
-
-                            // Pull Step Vector Calculation
-                            const stepX = Math.sign(closestBh.dx);
-                            const stepY = Math.sign(closestBh.dy);
-                            const targetX = x + stepX;
-                            const targetY = y + stepY;
-
-                            if (targetX >= 0 && targetX < WIDTH && targetY >= 0 && targetY < HEIGHT) {
-                                const targetIdx = targetY * WIDTH + targetX;
-                                // Pull directly into empty air or swap with lower density
-                                if (grid[targetIdx] === 0 || grid[targetIdx] !== 40) {
-                                    swap(idx, targetIdx);
-                                    continue; // Override standard downward gravity
-                                }
-                            }
-                        }
-                    }
-
-                    if (elem === 40) continue; // Black Holes remain in place
-
-                    let currentTemp = tempGrid[idx];
-
-                    // 2. ACID REACTION
-                    if (elem === 37) {
-                        const neighbors = [idx - 1, idx + 1, idx - WIDTH, idx + WIDTH];
-                        for (let nIdx of neighbors) {
-                            if (nIdx >= 0 && nIdx < SIZE) {
-                                const nElem = grid[nIdx];
-                                if ([1, 4, 5, 8, 30, 32, 36, 39].includes(nElem)) {
-                                    grid[nIdx] = 9;
-                                    tempGrid[nIdx] += 60;
-                                    lifeGrid[nIdx] = 80;
-                                    grid[idx] = 0;
-                                    break;
-                                } else if (nElem === 3 || nElem === 13) {
-                                    grid[idx] = 0;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    // 3. OIL FLAMMABILITY
-                    if (elem === 38) {
-                        if (currentTemp > 120) {
-                            grid[idx] = 6;
-                            tempGrid[idx] = 900;
-                            lifeGrid[idx] = 70;
-                        }
-                    }
-
-                    // 4. C-4 DETONATION
-                    if (elem === 39) {
-                        if (currentTemp > 300 || chargeGrid[idx] > 5) {
-                            triggerExplosion(x, y, 12, 2200);
-                            continue;
-                        }
-                    }
-
-                    // Phase Transitions
-                    if (elem === 1 && currentTemp > 800) grid[idx] = 12;
-                    else if (elem === 12 && currentTemp < 400) grid[idx] = 13;
-                    else if (elem === 13 && currentTemp > 900) grid[idx] = 12;
-                    else if (elem === 30 && currentTemp > 1500) grid[idx] = 7;
-                    else if (elem === 2) {
-                        if (currentTemp >= 100) { grid[idx] = 9; lifeGrid[idx] = 150; }
-                        else if (currentTemp <= 0) { grid[idx] = 10; }
-                    } else if (elem === 11) {
-                        if (currentTemp >= 105) { grid[idx] = 9; lifeGrid[idx] = 150; }
-                        else if (currentTemp <= -15) {
-                            grid[idx] = 10;
-                            const neighborX = x + (Math.random() < 0.5 ? 1 : -1);
-                            if (neighborX >= 0 && neighborX < WIDTH && grid[y * WIDTH + neighborX] === 0) {
-                                grid[y * WIDTH + neighborX] = 4;
-                            }
-                        }
-                    } else if (elem === 10 && currentTemp > 0) grid[idx] = 2;
-                    else if (elem === 9 && currentTemp < 70) grid[idx] = 2;
-                    else if (elem === 7 && currentTemp < 700) grid[idx] = 8;
-                    else if (elem === 8 && currentTemp > 1100) grid[idx] = 7;
-                    else if (elem === 5 && currentTemp > 250) { grid[idx] = 6; lifeGrid[idx] = 40; }
-
-                    // LITHIUM VOLTAGE LOGIC
-                    if (elem === 36) {
-                        if (chargeGrid[idx] >= 100) {
-                            triggerExplosion(x, y, 8, 2000);
-                            continue;
-                        } else if (chargeGrid[idx] > 0) {
-                            tempGrid[idx] += 2;
-                            const neighbors = [idx - 1, idx + 1, idx - WIDTH, idx + WIDTH, idx - WIDTH - 1, idx - WIDTH + 1, idx + WIDTH - 1, idx + WIDTH + 1];
-                            for (let nIdx of neighbors) {
-                                if (nIdx >= 0 && nIdx < SIZE && grid[nIdx] === 36 && chargeGrid[nIdx] < chargeGrid[idx]) {
-                                    const transfer = chargeGrid[idx] * 0.35;
-                                    chargeGrid[nIdx] += transfer;
-                                    chargeGrid[idx] -= transfer * 0.1;
-                                }
-                            }
-                            chargeGrid[idx] -= 0.2;
-                            if (chargeGrid[idx] < 0) chargeGrid[idx] = 0;
-                        }
-                    }
-                    // STANDARD CONDUCTOR CHARGE PROPAGATION
-                    else if (chargeGrid[idx] > 10) {
-                        tempGrid[idx] += 8;
-                        if (elem === 5) { grid[idx] = 6; lifeGrid[idx] = 30; }
-                        else if (elem === 38) { grid[idx] = 6; tempGrid[idx] = 900; lifeGrid[idx] = 70; }
-                        else if (elem === 2 || elem === 11) { tempGrid[idx] += 25; }
-
-                        const neighbors = [idx - 1, idx + 1, idx - WIDTH, idx + WIDTH];
-                        for (let nIdx of neighbors) {
-                            if (nIdx >= 0 && nIdx < SIZE && chargeGrid[nIdx] < 10) {
-                                const nElem = grid[nIdx];
-                                if ([30, 2, 11, 5, 36, 39].includes(nElem)) {
-                                    chargeGrid[nIdx] = chargeGrid[idx] * 0.9;
-                                }
-                            }
-                        }
-                        chargeGrid[idx] -= 35;
-                    } else if (elem !== 36) {
-                        chargeGrid[idx] = 0;
-                    }
-
-                    // NUCLEAR FISSION
-                    if (elem === 33) {
-                        const neighbors = [idx - 1, idx + 1, idx - WIDTH, idx + WIDTH];
-                        for (let nIdx of neighbors) {
-                            if (nIdx >= 0 && nIdx < SIZE) {
-                                if (grid[nIdx] === 32) {
-                                    triggerExplosion(x, y, 10, 2500);
-                                    for (let n = 0; n < 3; n++) {
-                                        const freeIdx = nIdx + (Math.floor(Math.random() * 3) - 1) * WIDTH + (Math.floor(Math.random() * 3) - 1);
-                                        if (freeIdx >= 0 && freeIdx < SIZE && grid[freeIdx] === 0) {
-                                            grid[freeIdx] = 33;
-                                            vxGrid[freeIdx] = (Math.random() - 0.5) * 6;
-                                            vyGrid[freeIdx] = (Math.random() - 0.5) * 6;
-                                            lifeGrid[freeIdx] = 120;
-                                        }
-                                    }
-                                    break;
-                                } else if (grid[nIdx] === 39) {
-                                    triggerExplosion(x, y, 12, 2200);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    // Decay lifespans
-                    if (elem === 6 || elem === 9 || (elem >= 33 && elem <= 35)) {
-                        lifeGrid[idx]--;
-                        if (lifeGrid[idx] <= 0) {
-                            grid[idx] = 0;
-                            chargeGrid[idx] = 0;
-                            continue;
-                        }
-                    }
-
-                    // Subatomic Velocity Movement
-                    if (elem >= 33 && elem <= 35) {
-                        const nextX = Math.round(x + vxGrid[idx]);
-                        const nextY = Math.round(y + vyGrid[idx]);
-
-                        if (nextX >= 0 && nextX < WIDTH && nextY >= 0 && nextY < HEIGHT) {
-                            const targetIdx = nextY * WIDTH + nextX;
-                            if (grid[targetIdx] === 0) {
-                                swap(idx, targetIdx);
-                            } else if (grid[targetIdx] === 30 || grid[targetIdx] === 3) {
-                                vxGrid[idx] = -vxGrid[idx];
-                                vyGrid[idx] = -vyGrid[idx];
-                            } else if (grid[targetIdx] === 32 && elem === 33) {
-                                triggerExplosion(nextX, nextY, 10, 2500);
-                                grid[idx] = 0;
-                            }
-                        }
-                        continue;
-                    }
-
-                    // Standard Directional Downward Gravity & Cellular Automata
-                    const density = DENSITIES[elem] || 0;
-
-                    if (elem === 1 || elem === 4 || elem === 32 || elem === 36) {
-                        const below = (y + 1) * WIDTH + x;
-                        const dir = Math.random() < 0.5 ? 1 : -1;
-                        const belowSide = (y + 1) * WIDTH + (x + dir);
-
-                        if (y < HEIGHT - 1 && (DENSITIES[grid[below]] || 0) < density) {
-                            swap(idx, below);
-                        } else if (y < HEIGHT - 1 && x + dir >= 0 && x + dir < WIDTH && (DENSITIES[grid[belowSide]] || 0) < density) {
-                            swap(idx, belowSide);
-                        }
-                    } else if (elem === 2 || elem === 7 || elem === 11 || elem === 12 || elem === 37 || elem === 38) {
-                        const below = (y + 1) * WIDTH + x;
-                        const dir = Math.random() < 0.5 ? 1 : -1;
-                        const belowSide = (y + 1) * WIDTH + (x + dir);
-                        const side = y * WIDTH + (x + dir);
-
-                        if (elem === 7 && y < HEIGHT - 1 && grid[below] === 2) {
-                            grid[below] = 9; grid[idx] = 8; continue;
-                        }
-
-                        if (y < HEIGHT - 1 && (DENSITIES[grid[below]] || 0) < density) {
-                            swap(idx, below);
-                        } else if (y < HEIGHT - 1 && x + dir >= 0 && x + dir < WIDTH && (DENSITIES[grid[belowSide]] || 0) < density) {
-                            swap(idx, belowSide);
-                        } else if (x + dir >= 0 && x + dir < WIDTH && (DENSITIES[grid[side]] || 0) < density) {
-                            swap(idx, side);
-                        }
-                    } else if (elem === 6 || elem === 9) {
-                        const above = (y - 1) * WIDTH + x;
-                        const dir = Math.random() < 0.5 ? 1 : -1;
-                        const aboveSide = (y - 1) * WIDTH + (x + dir);
-
-                        if (y > 0 && (DENSITIES[grid[above]] || 0) > density) {
-                            swap(idx, above);
-                        } else if (y > 0 && x + dir >= 0 && x + dir < WIDTH && (DENSITIES[grid[aboveSide]] || 0) > density) {
-                            swap(idx, aboveSide);
-                        }
-                    }
-                }
-            }
-
-            // Temperature Conduction & Ambient Drift
-            for (let y = 1; y < HEIGHT - 1; y++) {
-                for (let x = 1; x < WIDTH - 1; x++) {
-                    const idx = y * WIDTH + x;
-                    
-                    tempGrid[idx] += (ambientTemp - tempGrid[idx]) * 0.005;
-
-                    if (grid[idx] === 0) continue;
-
-                    const right = idx + 1;
-                    const below = idx + WIDTH;
-
-                    const avgTemp1 = (tempGrid[idx] + tempGrid[right]) / 2;
-                    tempGrid[idx] += (avgTemp1 - tempGrid[idx]) * 0.05;
-                    tempGrid[right] += (avgTemp1 - tempGrid[right]) * 0.05;
-
-                    const avgTemp2 = (tempGrid[idx] + tempGrid[below]) / 2;
-                    tempGrid[idx] += (avgTemp2 - tempGrid[idx]) * 0.05;
-                    tempGrid[below] += (avgTemp2 - tempGrid[below]) * 0.05;
-                }
-            }
-        }
-
-        const imgData = ctx.createImageData(WIDTH, HEIGHT);
-        function render() {
-            const data = imgData.data;
-            for (let i = 0; i < SIZE; i++) {
-                const elem = grid[i];
-                const baseColor = COLORS[elem] || COLORS[0];
-                const px = i * 4;
-
-                let r = baseColor[0];
-                let g = baseColor[1];
-                let b = baseColor[2];
-                let a = baseColor[3];
-
-                if (chargeGrid[i] > 0) {
-                    const intensity = Math.min(1, chargeGrid[i] / 100);
-                    r = Math.floor(r + (255 - r) * intensity);
-                    g = Math.floor(g + (255 - g) * intensity);
-                    b = Math.floor(b + (120 - b) * intensity);
-                } else if ((elem === 8 || elem === 13 || elem === 30) && tempGrid[i] > 400) {
-                    r = Math.min(255, r + (tempGrid[i] - 400) * 0.2);
-                }
-
-                data[px]     = r;
-                data[px + 1] = g;
-                data[px + 2] = b;
-                data[px + 3] = a;
-            }
-            ctx.putImageData(imgData, 0, 0);
-        }
-
-        function loop() {
-            updateSimulation();
-            updateInspectorHUD();
-            render();
-            requestAnimationFrame(loop);
-        }
-
-        loop();
-    </script>
+function hud() {
+  if (mx >= 0 && mx < W && my >= 0 && my < H) {
+    const i = my * W + mx, e = grid[i], v = charge[i] > 0 ? ' [' + Math.floor(charge[i]) + 'V]' : '';
+    $('hEl').textContent = 'Hover: ' + elName(i) + v; $('hTemp').textContent = 'Temp: ' + temp[i].toFixed(1) + '°C'; $('hDen').textContent = 'Density: ' + E[e].d;
+  } else { $('hEl').textContent = 'Hover: none'; $('hTemp').textContent = 'Temp: ' + ambient.toFixed(1) + '°C'; $('hDen').textContent = 'Density: -'; }
+  if (frame % 15 === 0) { count = 0; for (let i = 0; i < N; i++) if (grid[i]) count++; $('hCount').textContent = 'Particles: ' + count; }
+}
+function loop() {
+  if (drawing && mx >= 0) { brushLine(lx >= 0 ? lx : mx, ly >= 0 ? ly : my, mx, my, btn === 2 ? 0 : drawEl); lx = mx; ly = my; }
+  if (running) for (let s = 0; s < speed; s++) step(); else frame++;
+  render(); hud();
+  requestAnimationFrame(loop);
+}
+clearAll();
+loop();
+</script>
 </body>
 </html>

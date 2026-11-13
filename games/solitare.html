@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Solitaire | Celestial Hub</title>
+  <title>Solitaire & Poker | Celestial Hub</title>
   <link rel="stylesheet" href="../assets/css/game-catalog.css">
   <style>
     /* Game-only styles. Colors inherit from game-catalog.css; change the accent here to match exactly. */
@@ -48,6 +48,48 @@
     .win { background: #14141f; color: #f2f2f7; border: 1px solid var(--hub-accent); border-radius: 12px; padding: 28px 36px; text-align: center; max-width: 90vw; }
     .win h2 { margin: 0 0 8px; font-size: 1.6rem; }
     .win p { margin: 6px 0 18px; }
+    [hidden] { display: none !important; }
+    #heView { padding: 12px; border-radius: 12px; background: rgba(0,0,0,.28); border: 1px solid rgba(127,127,127,.35); }
+    .he-info { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 14px; font-size: .9rem; margin-bottom: 8px; }
+    .he-info b { color: var(--hub-accent); }
+    .he-seats { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+    .he-seat { flex: 1 1 140px; max-width: 220px; padding: 8px; border-radius: 10px; background: rgba(127,127,127,.12); border: 2px solid transparent; text-align: center; font-size: .85rem; }
+    .he-seat.act { border-color: var(--hub-accent); }
+    .he-seat.win { border-color: #ffd54a; }
+    .he-seat.fold { opacity: .45; }
+    .he-seat.out { opacity: .3; }
+    .he-name { font-weight: 700; }
+    .he-name em { font-style: normal; font-size: .7rem; margin-left: 6px; padding: 1px 6px; border-radius: 8px; background: var(--hub-accent); color: #fff; }
+    .he-name em.ai { background: #c62840; }
+    .he-stack { color: #ffd54a; font-weight: 700; margin: 2px 0 4px; }
+    .he-cards { display: flex; gap: 4px; justify-content: center; min-height: 10px; }
+    .he-bet { min-height: 18px; margin-top: 4px; font-size: .8rem; opacity: .9; }
+    .he-board { display: flex; gap: 6px; justify-content: center; margin: 12px 0; }
+    .he-me { margin-top: 4px; }
+    .he-act { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; margin-top: 10px; min-height: 40px; }
+    .he-raise { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; }
+    .he-raise input[type=range] { width: 180px; accent-color: var(--hub-accent); }
+    .he-log { margin-top: 10px; font-size: .8rem; opacity: .75; line-height: 1.45; text-align: center; }
+    .hc { position: relative; display: inline-block; flex: none; width: 36px; height: 50px; border-radius: 5px; background: #fff; border: 1px solid #888; box-shadow: 0 1px 3px rgba(0,0,0,.45);
+      font-weight: 800; font-size: 12px; line-height: 1; box-sizing: border-box; }
+    .hc.bd { width: clamp(38px, 9vw, 62px); height: clamp(53px, 12.6vw, 87px); font-size: clamp(13px, 3vw, 20px); }
+    .hc.sm { width: clamp(30px, 6.5vw, 44px); height: clamp(42px, 9.1vw, 62px); font-size: clamp(11px, 2.3vw, 15px); }
+    .hc.r { color: #c62828; } .hc.k { color: #111; }
+    .hc .cn { position: absolute; left: 6%; top: 5%; white-space: nowrap; }
+    .hc .cs { position: absolute; left: 0; right: 0; bottom: 10%; text-align: center; font-size: 2.1em; }
+    .hc.back { background: repeating-linear-gradient(45deg, var(--hub-accent) 0 4px, #14141f 4px 8px); border: 2px solid #fff; }
+    .hc.ph { background: transparent; border: 2px dashed rgba(127,127,127,.5); box-shadow: none; }
+    .back-link {
+      color: var(--accent-pink);
+      text-decoration: none;
+      font-size: 0.9rem;
+      align-self: flex-start;
+      margin-bottom: 5px;
+      display: inline-block;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -61,6 +103,7 @@
   </nav>
 
   <main class="container">
+    <a href="./catalog.html" class="back-link">&larr; Back to Game Catalog</a>
     <div class="sol">
       <div class="bar">
         <div class="grp">
@@ -71,6 +114,13 @@
             <option value="pyramid">Pyramid</option>
             <option value="spider1">Spider (1 suit)</option>
             <option value="spider2">Spider (2 suits)</option>
+            <option value="holdem">Texas Hold’em (vs AI)</option>
+          </select>
+          <select id="hePlayers" aria-label="Players" hidden>
+            <option value="2">2 players</option>
+            <option value="3">3 players</option>
+            <option value="4" selected>4 players</option>
+            <option value="5">5 players</option>
           </select>
         </div>
         <div class="grp">
@@ -82,6 +132,7 @@
       </div>
       <div id="msg"></div>
       <div id="felt"><div id="board"></div></div>
+      <div id="heView" hidden></div>
     </div>
   </main>
 
@@ -99,7 +150,8 @@ var TIP = {
   freecell: "Build down in alternating colors. The four cells at top-left hold one card each. How many cards you can move at once depends on your free cells and empty columns.",
   pyramid: "Remove pairs of uncovered cards that add up to 13 (Q=12, J=11, A=1). Kings come off alone. Clear the pyramid to win.",
   spider1: "Build down in sequence on any card. Only same-suit runs move together. Complete K to A runs to clear them. Fill every empty column before dealing.",
-  spider2: "Build down in sequence on any card. Only same-suit runs move together. Complete K to A runs to clear them. Fill every empty column before dealing."
+  spider2: "Build down in sequence on any card. Only same-suit runs move together. Complete K to A runs to clear them. Fill every empty column before dealing.",
+  holdem: "No-limit Texas Hold’em. Everyone starts with $1000 and the blinds rise every 8 hands. Use Hint to see your win chance and pot odds."
 };
 var mode = "klondike", P = {}, sel = null, hint = null, hist = [], moves = 0, won = false;
 var CW = 60, CH = 84, UP = 20, DN = 8, GAP = 8;
@@ -113,13 +165,16 @@ function deck(suits, copies) {
   for (var k = 0; k < copies; k++) suits.forEach(function (s) { for (var r = 1; r <= 13; r++) d.push({ s: s, r: r, up: false }); });
   return shuf(d);
 }
-function getTopCard(n) { var a = P[n]; return a[a.length - 1]; }
+function topCard(n) { var a = P[n]; return a[a.length - 1]; }
 function idx(r, c) { return r * (r + 1) / 2 + c; }
 function say(t) { $("msg").textContent = t; }
 function snap() { hist.push(JSON.stringify([P, moves])); }
 
 /* ---------- Setup ---------- */
+function showMode(h) { $("felt").hidden = h; $("heView").hidden = !h; $("bUndo").hidden = h; $("moves").parentNode.hidden = h; $("hePlayers").hidden = !h; }
 function init() {
+  if (mode === "holdem") { showMode(true); HE.start(); return; }
+  HE.stop(); showMode(false);
   P = {}; sel = null; hint = null; hist = []; moves = 0; won = false;
   $("overlay").classList.remove("show"); say(TIP[mode]);
   var d, i, j, c;
@@ -199,7 +254,7 @@ function checkRuns() {      // Spider: remove completed K..A same-suit runs
       var r = a.slice(-13);
       if (r.every(function (c, k) { return c.up && c.s === r[0].s && c.r === 13 - k; })) {
         a.splice(-13); r.forEach(function (c) { P.done.push(c); });
-        if (a.length) getTopCard("t" + i).up = true;
+        if (a.length) topCard("t" + i).up = true;
       }
     }
   }
@@ -208,7 +263,7 @@ function doMove(sn, si, dn) {
   snap();
   P[sn].splice(si).forEach(function (c) { P[dn].push(c); });
   moves++;
-  if (sn[0] === "t" && P[sn].length) getTopCard(sn).up = true;
+  if (sn[0] === "t" && P[sn].length) topCard(sn).up = true;
   if (mode[0] === "s") checkRuns();
 }
 function stockClick() {
@@ -227,11 +282,11 @@ function stockClick() {
 }
 function pyr(n) {
   if (!canPick(n, P[n].length - 1)) { sel = null; return false; }
-  var c = getTopCard(n);
+  var c = topCard(n);
   if (c.r === 13) { snap(); P.rem.push(P[n].pop()); moves++; sel = null; return true; }
   if (!sel) { sel = { n: n, i: 0 }; return false; }
   if (sel.n === n) { sel = null; return false; }
-  if (getTopCard(sel.n).r + c.r === 13) { snap(); P.rem.push(P[sel.n].pop(), P[n].pop()); moves++; sel = null; return true; }
+  if (topCard(sel.n).r + c.r === 13) { snap(); P.rem.push(P[sel.n].pop(), P[n].pop()); moves++; sel = null; return true; }
   sel = { n: n, i: 0 }; return false;
 }
 function isWon() {
@@ -242,7 +297,7 @@ function isWon() {
 }
 
 /* ---------- Input ---------- */
-function clickPile(n, i) {
+function click(n, i) {
   if (won) return;
   hint = null; say("");
   var moved = false;
@@ -279,9 +334,9 @@ function findHint() {
   if (mode === "pyramid") {
     var fr = ["waste"].concat(PRC.map(function (_, k) { return "p" + k; })).filter(function (n) { return canPick(n, P[n].length - 1); });
     var ti = function (n) { return P[n].length - 1; };
-    for (var a = 0; a < fr.length; a++) if (getTopCard(fr[a]).r === 13) return { cards: [[fr[a], ti(fr[a])]], piles: [] };
+    for (var a = 0; a < fr.length; a++) if (topCard(fr[a]).r === 13) return { cards: [[fr[a], ti(fr[a])]], piles: [] };
     for (var x = 0; x < fr.length; x++) for (var y = x + 1; y < fr.length; y++)
-      if (getTopCard(fr[x]).r + getTopCard(fr[y]).r === 13) return { cards: [[fr[x], ti(fr[x])], [fr[y], ti(fr[y])]], piles: [] };
+      if (topCard(fr[x]).r + topCard(fr[y]).r === 13) return { cards: [[fr[x], ti(fr[x])], [fr[y], ti(fr[y])]], piles: [] };
     return (P.stock.length || P.waste.length) ? { cards: [], piles: ["stock"] } : null;
   }
   Object.keys(P).forEach(function (sn) {
@@ -293,7 +348,7 @@ function findHint() {
         if ("tfc".indexOf(dn[0]) < 0 || !canDrop(sn, si, dn)) return;
         var d = P[dn], sc = 1;
         if (dn[0] === "c") { if (sn[0] !== "t" || si !== a.length - 1) return; sc = 0.5; }
-        if (sn[0] === "t" && si === 0 && !d.length) return;          // pointless column swap
+        if (sn[0] === "t" && si === 0 && !d.length) return;           // pointless column swap
         if (dn[0] === "f") sc += 5;
         if (sn[0] === "t" && si > 0 && !a[si - 1].up) sc += 3;        // reveals a hidden card
         if (sn === "waste" || sn[0] === "c") sc += 2;
@@ -341,6 +396,7 @@ function R(list, fan) { return '<div class="row">' + list.map(function (x) { ret
 function seq(p, n, s) { var o = []; for (var i = 0; i < n; i++) o.push([p + i, i + s]); return o; }
 
 function render() {
+  if (mode === "holdem") return;
   size();
   var h = "";
   if (mode === "klondike") h = R([["stock",1],["waste",2]].concat(seq("f",4,4)), 0) + R(seq("t",7,1), 1);
@@ -367,7 +423,7 @@ $("board").addEventListener("click", function (e) {
   var c = e.target.closest(".sc"), p = e.target.closest(".pile");
   if (!p) return;
   var n = p.dataset.n;
-  clickPile(n, c ? +c.dataset.i : P[n].length - 1);
+  click(n, c ? +c.dataset.i : P[n].length - 1);
 });
 $("board").addEventListener("dblclick", function (e) {
   var c = e.target.closest(".sc");
@@ -376,11 +432,290 @@ $("board").addEventListener("dblclick", function (e) {
   if (n === "stock" || n[0] === "f" || i !== P[n].length - 1) return;
   for (var k = 0; k < 4; k++) if (canDrop(n, i, "f" + k)) { sel = null; hint = null; doMove(n, i, "f" + k); finish(true); return; }
 });
+/* ---------- Texas Hold'em (no-limit, you vs 1-4 AI) ---------- */
+var HE = (function () {
+  var NAMES = ["You", "Mei", "Chen", "Lan", "Kai"], RANKS = "23456789TJQKA";
+  var HSUITS = ["♠", "♥", "♦", "♣"];
+  var LEVELS = [[10, 20], [15, 30], [25, 50], [50, 100], [100, 200], [200, 400]];
+  var HNAMES = ["High card", "Pair", "Two pair", "Three of a kind", "Straight", "Flush", "Full house", "Four of a kind", "Straight flush"];
+  var S = null, N = 4, gen = 0;
+
+  /* --- hand evaluation: cards are 0..51, rank = c % 13 (0 = deuce, 12 = ace), suit = floor(c / 13) --- */
+  function strHigh(mask) {
+    for (var h = 12; h >= 4; h--) if (((mask >> (h - 4)) & 31) === 31) return h;
+    return (mask & 0x100F) === 0x100F ? 3 : -1;            // A-2-3-4-5
+  }
+  function pack(a) { var v = 0; for (var k = 0; k < 5; k++) v = (v << 4) | (a[k] || 0); return v; }
+  function eval7(c) {
+    var rc = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], sc = [0, 0, 0, 0], sm = [0, 0, 0, 0], mask = 0, i, r, s;
+    for (i = 0; i < c.length; i++) { r = c[i] % 13; s = (c[i] / 13) | 0; rc[r]++; sc[s]++; sm[s] |= 1 << r; mask |= 1 << r; }
+    var fs = -1; for (s = 0; s < 4; s++) if (sc[s] >= 5) fs = s;
+    if (fs >= 0) { var sf = strHigh(sm[fs]); if (sf >= 0) return (8 << 20) | pack([sf]); }
+    function kick(n, ex) { var o = []; for (var x = 12; x >= 0 && o.length < n; x--) if (rc[x] > 0 && ex.indexOf(x) < 0) o.push(x); return o; }
+    var q = -1, t = -1, t2 = -1, p1 = -1, p2 = -1;
+    for (r = 12; r >= 0; r--) {
+      if (rc[r] === 4) q = r;
+      else if (rc[r] === 3) { if (t < 0) t = r; else if (t2 < 0) t2 = r; }
+      else if (rc[r] === 2) { if (p1 < 0) p1 = r; else if (p2 < 0) p2 = r; }
+    }
+    if (q >= 0) return (7 << 20) | pack([q].concat(kick(1, [q])));
+    var pr = Math.max(t2, p1);
+    if (t >= 0 && pr >= 0) return (6 << 20) | pack([t, pr]);
+    if (fs >= 0) { var fr = []; for (r = 12; r >= 0 && fr.length < 5; r--) if (sm[fs] & (1 << r)) fr.push(r); return (5 << 20) | pack(fr); }
+    var st = strHigh(mask); if (st >= 0) return (4 << 20) | pack([st]);
+    if (t >= 0) return (3 << 20) | pack([t].concat(kick(2, [t])));
+    if (p1 >= 0 && p2 >= 0) return (2 << 20) | pack([p1, p2].concat(kick(1, [p1, p2])));
+    if (p1 >= 0) return (1 << 20) | pack([p1].concat(kick(3, [p1])));
+    return pack(kick(5, []));
+  }
+  function handName(sc) { var cat = sc >> 20; return cat === 8 && ((sc >> 16) & 15) === 12 ? "Royal flush" : HNAMES[cat]; }
+  function cardH(c, extra) {
+    if (c === null) return '<span class="hc back ' + (extra || "") + '"></span>';
+    var s = (c / 13) | 0, rk = RANKS[c % 13] === "T" ? "10" : RANKS[c % 13];
+    return '<span class="hc ' + (s === 1 || s === 2 ? "r" : "k") + " " + (extra || "") + '"><span class="cn">' + rk + HSUITS[s] + '</span><span class="cs">' + HSUITS[s] + "</span></span>";
+  }
+
+  /* --- table helpers --- */
+  function later(fn, ms) { var g = gen; setTimeout(function () { if (g === gen) fn(); }, ms); }
+  function nextAlive(i) { var j = i; do { j = (j + 1) % N; } while (S.p[j].out); return j; }
+  function log(t) { S.log.push(t); if (S.log.length > 8) S.log.shift(); }
+  function money(n) { return "$" + n; }
+  function sumBets() { var t = 0; S.p.forEach(function (q) { t += q.bet; }); return t; }
+  function commit(q, amt) { amt = Math.min(amt, q.stack); q.stack -= amt; q.bet += amt; q.total += amt; if (q.stack === 0) q.allIn = true; return amt; }
+  function minTo() { return S.currentBet === 0 ? S.bb : S.currentBet + S.minRaise; }
+
+  function start() {
+    gen++; N = +$("hePlayers").value;
+    var p = [];
+    for (var i = 0; i < N; i++) p.push({ name: NAMES[i], stack: 1000, hole: [], bet: 0, total: 0, folded: false, allIn: false, acted: false, out: false, shown: false, win: 0, txt: "", score: 0, aggr: 0.85 + Math.random() * 0.4 });
+    S = { p: p, dealer: Math.floor(Math.random() * N), hand: 0, log: [], over: false, phase: "pre", board: [], pot: 0, cur: 0, currentBet: 0, minRaise: 20, bb: 20, sb: 10, result: "", hintTxt: "" };
+    newHand();
+  }
+  function newHand() {
+    gen++;
+    var P = S.p;
+    P.forEach(function (q) { if (q.stack <= 0) q.out = true; });
+    var alive = P.filter(function (q) { return !q.out; });
+    if (P[0].out) { S.over = true; S.result = "You’re out of chips. Press New game to play again."; draw(); return; }
+    if (alive.length === 1) { S.over = true; S.result = "You busted the whole table. You win the match!"; draw(); return; }
+    S.hand++;
+    var lv = LEVELS[Math.min(LEVELS.length - 1, Math.floor((S.hand - 1) / 8))];
+    S.sb = lv[0]; S.bb = lv[1];
+    S.dealer = nextAlive(S.dealer);
+    var deck = []; for (var c = 0; c < 52; c++) deck.push(c);
+    shuf(deck); S.deck = deck; S.board = []; S.pot = 0; S.phase = "pre"; S.result = ""; S.hintTxt = ""; S.log = [];
+    P.forEach(function (q) { q.hole = []; q.bet = 0; q.total = 0; q.folded = q.out; q.allIn = false; q.acted = false; q.win = 0; q.txt = ""; q.shown = false; q.score = 0; });
+    alive.forEach(function (q) { q.hole = [deck.pop(), deck.pop()]; });
+    var heads = alive.length === 2, sbI = heads ? S.dealer : nextAlive(S.dealer), bbI = nextAlive(sbI);
+    commit(P[sbI], S.sb); commit(P[bbI], S.bb);
+    S.currentBet = S.bb; S.minRaise = S.bb;
+    log("Hand " + S.hand + ": blinds " + money(S.sb) + "/" + money(S.bb) + ". " + P[S.dealer].name + (S.dealer === 0 ? " have" : " has") + " the button.");
+    say("Hand " + S.hand + " — your cards are dealt.");
+    step(bbI);
+  }
+
+  /* --- betting flow --- */
+  function step(from) {
+    var P = S.p, live = P.filter(function (q) { return !q.out && !q.folded; });
+    if (live.length === 1) return winByFold(live[0]);
+    var can = live.filter(function (q) { return !q.allIn; });
+    var complete = can.every(function (q) { return q.bet === S.currentBet && (q.acted || can.length <= 1); });
+    if (complete) return nextStreet();
+    var j = from, n = 0, found = -1;
+    while (n++ < N) {
+      j = (j + 1) % N; var q = P[j];
+      if (!q.out && !q.folded && !q.allIn && (!q.acted || q.bet < S.currentBet)) { found = j; break; }
+    }
+    if (found < 0) return nextStreet();
+    S.cur = found; S.hintTxt = ""; draw();
+    if (found !== 0) later(aiAct, 650 + Math.random() * 450);
+  }
+  function nextStreet() {
+    S.p.forEach(function (q) { S.pot += q.bet; q.bet = 0; q.acted = false; });
+    S.currentBet = 0; S.minRaise = S.bb;
+    var live = S.p.filter(function (q) { return !q.out && !q.folded; }), can = live.filter(function (q) { return !q.allIn; });
+    if (S.phase === "pre") { S.board.push(S.deck.pop(), S.deck.pop(), S.deck.pop()); S.phase = "flop"; log("Flop dealt."); }
+    else if (S.phase === "flop") { S.board.push(S.deck.pop()); S.phase = "turn"; log("Turn dealt."); }
+    else if (S.phase === "turn") { S.board.push(S.deck.pop()); S.phase = "river"; log("River dealt."); }
+    else return showdown();
+    draw();
+    if (can.length <= 1) { later(nextStreet, 1000); return; }     // everyone is all-in: run the board out
+    step(S.dealer);
+  }
+  function doAct(i, type, to) {
+    var q = S.p[i], toCall = S.currentBet - q.bet;
+    if (type === "fold") { q.folded = true; log(q.name + (i === 0 ? " fold." : " folds.")); }
+    else if (type === "call") {
+      var a = commit(q, toCall);
+      log(q.name + (toCall === 0 ? (i === 0 ? " check." : " checks.") : (i === 0 ? " call " : " calls ") + money(a) + (q.allIn ? " (all-in)." : ".")));
+    } else {
+      var max = q.stack + q.bet, wasBet = S.currentBet === 0;
+      to = Math.max(Math.min(to, max), Math.min(minTo(), max));
+      commit(q, to - q.bet);
+      if (q.bet > S.currentBet) {
+        var size = q.bet - S.currentBet;
+        if (size >= S.minRaise) S.minRaise = size;
+        S.currentBet = q.bet;
+        S.p.forEach(function (o) { if (o !== q) o.acted = false; });
+      }
+      log(q.name + (wasBet ? (i === 0 ? " bet " : " bets ") : (i === 0 ? " raise to " : " raises to ")) + money(q.bet) + (q.allIn ? " (all-in)." : "."));
+    }
+    q.acted = true;
+    step(i);
+  }
+
+  /* --- results --- */
+  function sidePots(live) {
+    var levels = [], pots = [], prev = 0, top = 0;
+    live.forEach(function (q) { if (levels.indexOf(q.total) < 0) levels.push(q.total); });
+    levels.sort(function (a, b) { return a - b; });
+    levels.forEach(function (L) {
+      var amt = 0;
+      S.p.forEach(function (q) { amt += Math.max(0, Math.min(q.total, L) - Math.min(q.total, prev)); });
+      var el = live.filter(function (q) { return q.total >= L; });
+      if (amt > 0) pots.push({ amt: amt, el: el });
+      prev = L; top = L;
+    });
+    var extra = 0; S.p.forEach(function (q) { extra += Math.max(0, q.total - top); });
+    if (extra && pots.length) pots[pots.length - 1].amt += extra;
+    return pots;
+  }
+  function winByFold(w) {
+    var tot = S.pot; S.p.forEach(function (q) { tot += q.bet; q.bet = 0; }); S.pot = 0;
+    w.stack += tot; w.win = tot; S.phase = "show";
+    S.result = w.name + (w.name === "You" ? " win " : " wins ") + money(tot) + " — everyone else folded.";
+    log(S.result); say(S.result); draw();
+  }
+  function showdown() {
+    var P = S.p, live = P.filter(function (q) { return !q.out && !q.folded; });
+    live.forEach(function (q) { q.score = eval7(q.hole.concat(S.board)); q.txt = handName(q.score); q.shown = true; });
+    sidePots(live).forEach(function (po) {
+      var el = po.el.length ? po.el : live, best = -1;
+      el.forEach(function (q) { if (q.score > best) best = q.score; });
+      var ws = el.filter(function (q) { return q.score === best; });
+      ws.sort(function (a, b) { return ((P.indexOf(a) - S.dealer - 1 + N) % N) - ((P.indexOf(b) - S.dealer - 1 + N) % N); });
+      var share = Math.floor(po.amt / ws.length), rem = po.amt - share * ws.length;
+      ws.forEach(function (q, k) { var g = share + (k === 0 ? rem : 0); q.stack += g; q.win += g; });
+    });
+    S.pot = 0; S.phase = "show";
+    S.result = P.filter(function (q) { return q.win > 0; }).map(function (q) { return q.name + (q.name === "You" ? " win " : " wins ") + money(q.win) + " with " + q.txt; }).join(" · ");
+    log(S.result); say(S.result); draw();
+  }
+
+  /* --- the AI: Monte Carlo equity against random hands, compared with pot odds --- */
+  function equity(i, sims) {
+    var q = S.p[i], opp = S.p.filter(function (o, j) { return j !== i && !o.out && !o.folded; }).length;
+    var used = {}, rem = [], c, k, s, j, t;
+    q.hole.concat(S.board).forEach(function (x) { used[x] = 1; });
+    for (c = 0; c < 52; c++) if (!used[c]) rem.push(c);
+    var need = opp * 2 + (5 - S.board.length), wins = 0;
+    for (s = 0; s < sims; s++) {
+      for (k = 0; k < need; k++) { j = k + Math.floor(Math.random() * (rem.length - k)); t = rem[k]; rem[k] = rem[j]; rem[j] = t; }
+      var bd = S.board.concat(rem.slice(opp * 2, need)), mine = eval7(q.hole.concat(bd)), best = -1, ties = 0;
+      for (k = 0; k < opp; k++) {
+        var sc = eval7([rem[2 * k], rem[2 * k + 1]].concat(bd));
+        if (sc > best) { best = sc; ties = 1; } else if (sc === best) ties++;
+      }
+      if (mine > best) wins += 1; else if (mine === best) wins += 1 / (ties + 1);
+    }
+    return wins / sims;
+  }
+  function clampRaise(q, target) {
+    var max = q.stack + q.bet;
+    target = Math.round(target / S.sb) * S.sb;
+    return Math.max(Math.min(target, max), Math.min(minTo(), max));
+  }
+  function decide(i, exactEq) {
+    var q = S.p[i], toCall = S.currentBet - q.bet, potNow = S.pot + sumBets();
+    var eq = exactEq !== undefined ? exactEq : equity(i, 260) + (Math.random() - 0.5) * 0.06;
+    var odds = toCall / (potNow + toCall), noisy = exactEq !== undefined ? 1 : q.aggr;
+    if (toCall <= 0) {
+      if (eq > 0.66 && Math.random() < 0.8 * noisy) return { type: "raise", to: clampRaise(q, S.currentBet + potNow * (eq > 0.82 ? 0.9 : 0.6)) };
+      if (eq > 0.5 && Math.random() < 0.25 * noisy) return { type: "raise", to: clampRaise(q, potNow * 0.35) };
+      if (exactEq === undefined && Math.random() < 0.05 * q.aggr) return { type: "raise", to: clampRaise(q, potNow * 0.5) };   // the occasional bluff
+      return { type: "call" };
+    }
+    if (toCall >= q.stack) return { type: eq > odds + 0.04 ? "call" : "fold" };
+    if (eq > 0.78 && Math.random() < 0.75 * noisy) return { type: "raise", to: clampRaise(q, S.currentBet + Math.max(S.minRaise, (potNow + toCall) * 0.75)) };
+    if (eq > odds + 0.04) return { type: "call" };
+    if (exactEq === undefined && eq > odds * 0.8 && Math.random() < 0.2) return { type: "call" };
+    return { type: "fold" };
+  }
+  function aiAct() {
+    if (S.over || S.phase === "show") return;
+    var d = decide(S.cur);
+    doAct(S.cur, d.type, d.to);
+  }
+  function hint() {
+    if (!S || S.over || S.phase === "show" || S.cur !== 0) { say("Hints are available on your turn."); return; }
+    var me = S.p[0], toCall = S.currentBet - me.bet, potNow = S.pot + sumBets(), eq = equity(0, 700), odds = toCall / (potNow + toCall), d = decide(0, eq);
+    var txt = "Win chance about " + Math.round(eq * 100) + "%. " + (toCall > 0 ? "Calling costs " + money(Math.min(toCall, me.stack)) + " to win " + money(potNow) + ", so you need about " + Math.round(odds * 100) + "%. " : "Checking is free. ");
+    txt += "Suggested: " + (d.type === "fold" ? "fold." : d.type === "call" ? (toCall > 0 ? "call." : "check.") : "raise to " + money(d.to) + ".");
+    say(txt);
+  }
+
+  /* --- drawing --- */
+  function seatH(i) {
+    var q = S.p[i], cls = "he-seat" + (S.cur === i && !S.over && S.phase !== "show" ? " act" : "") + (q.folded && !q.out ? " fold" : "") + (q.win > 0 ? " win" : "") + (q.out ? " out" : "");
+    var cards = "";
+    if (!q.out) cards = q.hole.map(function (c) { return cardH(i === 0 || q.shown ? c : null, "sm"); }).join("");
+    var tags = (S.dealer === i ? "<em>D</em>" : "") + (q.allIn && !q.folded && !q.out ? '<em class="ai">ALL-IN</em>' : "");
+    var info = q.out ? "out of chips" : (q.folded ? "folded" : (q.bet ? "bet " + money(q.bet) : "")) + (q.shown && !q.folded ? (q.bet ? " · " : "") + q.txt : "") + (q.win ? " · won " + money(q.win) : "");
+    return '<div class="' + cls + '"><div class="he-name">' + q.name + tags + '</div><div class="he-stack">' + money(q.stack) + '</div><div class="he-cards">' + cards + '</div><div class="he-bet">' + info + "</div></div>";
+  }
+  function draw() {
+    if (!S) return;
+    var h = "", i, a = "";
+    var bd = ""; for (i = 0; i < 5; i++) bd += i < S.board.length ? cardH(S.board[i], "bd") : '<span class="hc ph bd"></span>';
+    h += '<div class="he-info"><span>Hand ' + S.hand + "</span><span>Blinds " + money(S.sb) + "/" + money(S.bb) + "</span><span>Pot <b>" + money(S.pot + sumBets()) + "</b></span></div>";
+    h += '<div class="he-seats">'; for (i = 1; i < N; i++) h += seatH(i); h += "</div>";
+    h += '<div class="he-board">' + bd + "</div>";
+    h += '<div class="he-seats he-me">' + seatH(0) + "</div>";
+    var me = S.p[0];
+    if (S.over) a = "<b>" + S.result + '</b> <button class="primary" data-a="new">New game</button>';
+    else if (S.phase === "show") a = "<b>" + S.result + '</b> <button class="primary" data-a="next">Next hand</button>';
+    else if (S.cur === 0 && !me.folded) {
+      var toCall = S.currentBet - me.bet, mn = Math.min(minTo(), me.stack + me.bet), mxx = me.stack + me.bet;
+      a = '<button data-a="fold">Fold</button> <button class="primary" data-a="call">' + (toCall > 0 ? "Call " + money(Math.min(toCall, me.stack)) : "Check") + "</button>";
+      if (me.stack > toCall) {
+        a += ' <span class="he-raise"><input type="range" id="heRaise" min="' + mn + '" max="' + mxx + '" step="1" value="' + mn + '"> ' +
+          '<button data-a="pre" data-v="min">Min</button><button data-a="pre" data-v="half">½ pot</button><button data-a="pre" data-v="pot">Pot</button><button data-a="pre" data-v="all">All-in</button> ' +
+          '<button class="primary" data-a="raise" id="heRaiseBtn">' + (S.currentBet === 0 ? "Bet " : "Raise to ") + money(mn) + "</button></span>";
+      }
+    } else a = "<span>" + (S.phase === "pre" || S.cur !== 0 ? S.p[S.cur].name + " is thinking…" : "Waiting…") + "</span>";
+    h += '<div class="he-act">' + a + "</div>";
+    h += '<div class="he-log">' + S.log.map(function (l) { return "<div>" + l + "</div>"; }).join("") + "</div>";
+    $("heView").innerHTML = h;
+  }
+  function raiseLabel() { var s = $("heRaise"); if (s) $("heRaiseBtn").textContent = (S.currentBet === 0 ? "Bet " : "Raise to ") + money(+s.value); }
+  $("heView").addEventListener("input", function (e) { if (e.target.id === "heRaise") raiseLabel(); });
+  $("heView").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b || !S) return;
+    var a = b.dataset.a, me = S.p[0];
+    if (a === "next") { newHand(); return; }
+    if (a === "new") { start(); return; }
+    if (S.over || S.phase === "show" || S.cur !== 0) return;
+    if (a === "fold") doAct(0, "fold");
+    else if (a === "call") doAct(0, "call");
+    else if (a === "raise") doAct(0, "raise", +$("heRaise").value);
+    else if (a === "pre") {
+      var s = $("heRaise"), toCall = S.currentBet - me.bet, pot = S.pot + sumBets() + toCall, v = b.dataset.v, val;
+      if (v === "min") val = +s.min; else if (v === "all") val = +s.max;
+      else val = S.currentBet + (v === "half" ? 0.5 : 1) * pot;
+      s.value = Math.max(+s.min, Math.min(+s.max, Math.round(val))); raiseLabel();
+    }
+  });
+  return { start: start, hint: hint, stop: function () { gen++; }, g: function () { return S; },
+    _t: { eval7: eval7, handName: handName, doAct: doAct, decide: decide, equity: equity, sidePots: sidePots, newHand: newHand, sumBets: sumBets } };
+})();
+
+$("hePlayers").addEventListener("change", function () { init(); });
 $("mode").addEventListener("change", function () { mode = this.value; init(); });
 $("bNew").addEventListener("click", init);
 $("bAgain").addEventListener("click", init);
 $("bUndo").addEventListener("click", undo);
 $("bHint").addEventListener("click", function () {
+  if (mode === "holdem") { HE.hint(); return; }
   if (won) return;
   sel = null; hint = findHint();
   say(hint ? "" : "No moves left. Undo, or start a new game.");

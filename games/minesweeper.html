@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minesweeper | Celestial Hub</title>
+  <link rel="stylesheet" href="../assets/css/game-catalog.css">
+  <style>
+    /* Game-only styles. Colors inherit from game-catalog.css; change the accent here to match exactly. */
+    :root { --hub-accent: #8b7cff; }
+    [hidden] { display: none !important; }
+    .disabled-link { opacity: .45; cursor: not-allowed; pointer-events: none; }
+
+    .ms { max-width: 1000px; margin: 0 auto; }
+    .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; margin: 0 0 8px; }
+    .ms h1 { margin: 0; font-size: 1.4rem; }
+    .grp { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+    .ms select, .ms button, .ms input[type=number] { font: inherit; font-size: .9rem; color: inherit; padding: 6px 12px; border-radius: 6px;
+      background: rgba(127,127,127,.16); border: 1px solid rgba(127,127,127,.5); }
+    .ms button { cursor: pointer; }
+    .ms select option { color: #111; }
+    .ms input[type=number] { width: 64px; padding: 6px; text-align: center; }
+    .ms button:hover { background: rgba(127,127,127,.3); }
+    .ms button.primary { background: var(--hub-accent); border-color: var(--hub-accent); color: #fff; font-weight: 700; }
+    .ms button.on { background: #ffb300; border-color: #ffb300; color: #1b1405; font-weight: 700; }
+    .stats { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 1rem; margin: 0 0 6px; }
+    .stats b { color: var(--hub-accent); font-variant-numeric: tabular-nums; }
+    #msg { min-height: 24px; font-size: .95rem; opacity: .9; margin: 0 0 8px; }
+
+    #wrap { overflow: auto; padding: 10px; border-radius: 12px; background: rgba(0,0,0,.28); border: 1px solid rgba(127,127,127,.35); text-align: center; touch-action: manipulation; }
+    #grid { display: inline-grid; gap: 2px; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+    .cell { width: var(--cs); height: var(--cs); display: flex; align-items: center; justify-content: center; border-radius: 4px; cursor: pointer;
+      font-weight: 800; font-size: calc(var(--cs) * .56); line-height: 1; font-family: "Courier New", monospace;
+      background: linear-gradient(145deg, #6c6f93, #4b4e72); border: 1px solid #8a8db3; color: #fff; box-sizing: border-box; }
+    .cell:hover { filter: brightness(1.15); }
+    .cell.rev { background: #1b1d33; border-color: #2c2f50; cursor: default; filter: none; }
+    .cell.flag { color: #ff5a7a; }
+    .cell.mine { background: #3a1722; border-color: #7a2a3c; color: #ff8aa2; }
+    .cell.boom { background: #c62840; border-color: #ff8aa2; color: #fff; }
+    .cell.wrong { background: #3a1722; color: #ffb300; text-decoration: line-through; }
+    .cell.hint { outline: 3px solid #ffb300; outline-offset: -2px; animation: pulse .7s infinite; }
+    .cell.safe { outline-color: #4cd97b; }
+    @keyframes pulse { 50% { filter: brightness(1.4); } }
+    .n1 { color: #6fa8ff; } .n2 { color: #4cd97b; } .n3 { color: #ff6b6b; } .n4 { color: #a98bff; }
+    .n5 { color: #ff9f43; } .n6 { color: #3dd6d0; } .n7 { color: #f2f2f7; } .n8 { color: #9aa0c0; }
+    .help { margin-top: 10px; font-size: .85rem; opacity: .8; line-height: 1.5; }
+    .back-link {
+      color: var(--accent-pink);
+      text-decoration: none;
+      font-size: 0.9rem;
+      align-self: flex-start;
+      margin-bottom: 5px;
+      display: inline-block;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="../home.html" class="nav-brand">CELESTIAL</a>
+    <div class="nav-links">
+      <a href="#account" class="disabled-link" aria-disabled="true" tabindex="-1">Account</a>
+      <a href="https://discord.gg/qXJ9h7DNfs" target="_blank" class="nav-discord">Discord</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <a href="./catalog.html" class="back-link">&larr; Back to Game Catalog</a>
+    <div class="ms">
+      <div class="bar">
+        <div class="grp">
+          <h1>Minesweeper</h1>
+          <select id="diff" aria-label="Difficulty">
+            <option value="beginner">Beginner 9×9</option>
+            <option value="intermediate">Intermediate 16×16</option>
+            <option value="expert">Expert 30×16</option>
+            <option value="custom">Custom</option>
+          </select>
+          <span id="custom" class="grp" hidden>
+            <input id="cC" type="number" min="8" max="40" value="20" aria-label="Columns"> ×
+            <input id="cR" type="number" min="8" max="30" value="14" aria-label="Rows">
+            <input id="cM" type="number" min="1" value="45" aria-label="Mines">
+          </span>
+        </div>
+        <div class="grp">
+          <button id="bNew" class="primary">New game</button>
+          <button id="bFlag" aria-pressed="false">Flag mode: off</button>
+          <button id="bHint">Hint</button>
+        </div>
+      </div>
+      <div class="stats">
+        <span>Mines left <b id="mLeft">10</b></span>
+        <span>Time <b id="mTime">0</b></span>
+        <span>Best <b id="mBest">-</b></span>
+      </div>
+      <div id="msg"></div>
+      <div id="wrap"><div id="grid"></div></div>
+      <div class="help">
+        <b>Mouse:</b> left-click reveals, right-click flags, click a satisfied number (or middle-click) to reveal its neighbors.
+        <b>Touch:</b> tap reveals, long-press flags (or turn on Flag mode), tap a satisfied number to reveal its neighbors.
+        Your first click is always safe. Hint finds a move that is certain, if one exists.
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Femcil &bull; Hosted on GitHub Pages</p>
+  </footer>
+
+<script>
+"use strict";
+const PRESETS = { beginner: [9, 9, 10], intermediate: [16, 16, 40], expert: [30, 16, 99] };
+const $ = (id) => document.getElementById(id);
+let C = 9, R = 9, M = 10, cells = [], els = [], started = false, over = false, flagMode = false;
+let flags = 0, revealed = 0, secs = 0, timer = null, hintTimer = null, diffKey = 'beginner';
+
+const idx = (r, c) => r * C + c;
+function neighbors(i) {
+  const r = (i / C) | 0, c = i % C, out = [];
+  for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+    if (!dr && !dc) continue;
+    const nr = r + dr, nc = c + dc;
+    if (nr >= 0 && nr < R && nc >= 0 && nc < C) out.push(nr * C + nc);
+  }
+  return out;
+}
+function say(t) { $('msg').textContent = t; }
+
+function setup() {
+  clearInterval(timer); clearTimeout(hintTimer);
+  diffKey = $('diff').value;
+  $('custom').hidden = diffKey !== 'custom';
+  if (diffKey === 'custom') {
+    C = Math.max(8, Math.min(40, +$('cC').value || 20)); R = Math.max(8, Math.min(30, +$('cR').value || 14));
+    M = Math.max(1, Math.min(C * R - 9, +$('cM').value || 45));
+    $('cC').value = C; $('cR').value = R; $('cM').value = M;
+  } else [C, R, M] = PRESETS[diffKey];
+  cells = Array.from({ length: R * C }, () => ({ mine: false, adj: 0, st: 0 }));   // st: 0 hidden, 1 revealed, 2 flagged
+  started = false; over = false; flags = 0; revealed = 0; secs = 0;
+  $('mTime').textContent = '0'; $('mLeft').textContent = M; showBest();
+  say('Click any square to start. Your first click is always safe.');
+  build();
+}
+function showBest() {
+  let b = null; try { b = localStorage.getItem('ms_best_' + diffKey); } catch (e) {}
+  $('mBest').textContent = diffKey === 'custom' ? '-' : (b ? b + 's' : '-');
+}
+function sizeCells() {
+  const g = $('grid'), cs = Math.max(24, Math.min(38, Math.floor(($('wrap').clientWidth - 24) / C) - 2));
+  g.style.setProperty('--cs', cs + 'px');
+  g.style.gridTemplateColumns = `repeat(${C}, ${cs}px)`;
+}
+function build() {
+  const g = $('grid');
+  sizeCells(); g.innerHTML = ''; els = [];
+  for (let i = 0; i < R * C; i++) {
+    const d = document.createElement('div'); d.className = 'cell'; d.dataset.i = i; g.appendChild(d); els.push(d);
+  }
+}
+
+function placeMines(safe) {
+  const banned = new Set([safe, ...neighbors(safe)]);
+  let pool = []; for (let i = 0; i < R * C; i++) if (!banned.has(i)) pool.push(i);
+  if (pool.length < M) { pool = []; for (let i = 0; i < R * C; i++) if (i !== safe) pool.push(i); }   // tiny boards: only the clicked square is guaranteed safe
+  for (let k = pool.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [pool[k], pool[j]] = [pool[j], pool[k]]; }
+  for (let k = 0; k < M; k++) cells[pool[k]].mine = true;
+  for (let i = 0; i < R * C; i++) cells[i].adj = neighbors(i).filter(n => cells[n].mine).length;
+}
+
+function paint(i) {
+  const c = cells[i], e = els[i];
+  let cls = 'cell', txt = '';
+  if (c.st === 1) { cls += ' rev'; if (c.adj) { cls += ' n' + c.adj; txt = c.adj; } }
+  else if (c.st === 2) { cls += ' flag'; txt = '⚑'; }
+  e.className = cls; e.textContent = txt;
+}
+function reveal(i) {
+  if (over) return;
+  const c = cells[i];
+  if (c.st !== 0) return;
+  if (!started) {
+    started = true; placeMines(i);
+    timer = setInterval(() => { secs = Math.min(999, secs + 1); $('mTime').textContent = secs; }, 1000);
+  }
+  if (c.mine) return lose(i);
+  const q = [i]; c.st = 1; revealed++;
+  while (q.length) {
+    const cur = q.pop(); paint(cur);
+    if (cells[cur].adj) continue;
+    for (const n of neighbors(cur)) {
+      const nc = cells[n];
+      if (nc.st === 0) { nc.st = 1; revealed++; q.push(n); }
+    }
+  }
+  if (revealed === R * C - M) win();
+}
+function toggleFlag(i) {
+  if (over) return;
+  const c = cells[i];
+  if (c.st === 1) return;
+  c.st = c.st === 2 ? 0 : 2; flags += c.st === 2 ? 1 : -1;
+  $('mLeft').textContent = M - flags; paint(i);
+}
+function chord(i) {
+  if (over) return;
+  const c = cells[i];
+  if (c.st !== 1 || !c.adj) return;
+  const ns = neighbors(i);
+  if (ns.filter(n => cells[n].st === 2).length !== c.adj) return;
+  for (const n of ns) if (cells[n].st === 0) { reveal(n); if (over) return; }
+}
+
+function lose(hit) {
+  over = true; clearInterval(timer);
+  cells.forEach((c, i) => {
+    if (c.mine && c.st !== 2) { els[i].className = 'cell mine'; els[i].textContent = '✹'; }
+    else if (!c.mine && c.st === 2) { els[i].className = 'cell wrong'; els[i].textContent = '⚑'; }
+  });
+  els[hit].className = 'cell boom'; els[hit].textContent = '✹';
+  say('Boom! Press New game to try again.');
+  if (navigator.vibrate) { try { navigator.vibrate([60, 40, 120]); } catch (e) {} }
+}
+function win() {
+  over = true; clearInterval(timer);
+  cells.forEach((c, i) => { if (c.mine && c.st !== 2) { c.st = 2; paint(i); } });
+  $('mLeft').textContent = 0;
+  let msg = `Cleared in ${secs}s!`;
+  if (diffKey !== 'custom') {
+    try {
+      const key = 'ms_best_' + diffKey, b = +localStorage.getItem(key);
+      if (!b || secs < b) { localStorage.setItem(key, secs); msg += ' New best time!'; }
+    } catch (e) {}
+    showBest();
+  }
+  say(msg);
+  if (navigator.vibrate) { try { navigator.vibrate([30, 40, 30, 40, 80]); } catch (e) {} }
+}
+
+/* ---------- hint: finds a move that is certain from one number alone ---------- */
+function findHint() {
+  for (let i = 0; i < R * C; i++) {
+    const c = cells[i];
+    if (c.st !== 1 || !c.adj) continue;
+    const ns = neighbors(i), hid = ns.filter(n => cells[n].st === 0), fl = ns.filter(n => cells[n].st === 2).length;
+    if (!hid.length) continue;
+    if (fl === c.adj) return { cell: hid[0], safe: true };
+    if (hid.length === c.adj - fl) return { cell: hid[0], safe: false };
+  }
+  return null;
+}
+function hint() {
+  if (over) return;
+  if (!started) { say('Just click anywhere to start. The first click is always safe.'); return; }
+  const h = findHint();
+  if (!h) { say('No certain move from a single number. You may have to guess, or look for patterns across two numbers.'); return; }
+  clearTimeout(hintTimer);
+  els.forEach(e => e.classList.remove('hint', 'safe'));
+  els[h.cell].classList.add('hint'); if (h.safe) els[h.cell].classList.add('safe');
+  say(h.safe ? 'The highlighted square is safe to reveal.' : 'The highlighted square is a mine. Flag it.');
+  hintTimer = setTimeout(() => els[h.cell] && els[h.cell].classList.remove('hint', 'safe'), 3500);
+}
+
+/* ---------- input: mouse (left / right / middle) and touch (tap / long-press) ---------- */
+let press = null;
+function act(i, mode) {                  // mode: 'tap' reveals or chords, 'flag' flags
+  if (mode === 'flag') return toggleFlag(i);
+  const c = cells[i];
+  if (c.st === 1) chord(i); else if (c.st === 0) reveal(i);
+}
+$('grid').addEventListener('pointerdown', (e) => {
+  const t = e.target.closest('.cell'); if (!t) return;
+  const i = +t.dataset.i;
+  if (e.pointerType === 'mouse') {
+    if (e.button === 0) act(i, flagMode ? 'flag' : 'tap');
+    else if (e.button === 2) toggleFlag(i);
+    else if (e.button === 1) { e.preventDefault(); chord(i); }
+    return;
+  }
+  press = { i, long: false, timer: setTimeout(() => {
+    if (press) { press.long = true; toggleFlag(press.i); if (navigator.vibrate) { try { navigator.vibrate(25); } catch (_) {} } }
+  }, 420) };
+});
+function endPress(cancel) {
+  if (!press) return;
+  clearTimeout(press.timer);
+  if (!cancel && !press.long) act(press.i, flagMode ? 'flag' : 'tap');
+  press = null;
+}
+$('grid').addEventListener('pointerup', () => endPress(false));
+$('grid').addEventListener('pointercancel', () => endPress(true));
+$('grid').addEventListener('pointerleave', () => endPress(true));
+$('grid').addEventListener('contextmenu', (e) => e.preventDefault());
+
+$('diff').addEventListener('change', setup);
+['cC', 'cR', 'cM'].forEach(id => $(id).addEventListener('change', () => { if (diffKey === 'custom') setup(); }));
+$('bNew').addEventListener('click', setup);
+$('bHint').addEventListener('click', hint);
+$('bFlag').addEventListener('click', function () {
+  flagMode = !flagMode; this.classList.toggle('on', flagMode); this.textContent = 'Flag mode: ' + (flagMode ? 'on' : 'off'); this.setAttribute('aria-pressed', flagMode);
+});
+window.addEventListener('resize', sizeCells);
+setup();
+</script>
+</body>
+</html>

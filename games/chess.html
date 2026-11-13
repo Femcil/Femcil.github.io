@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chess | Celestial Hub</title>
+  <title>Chess & Checkers | Celestial Hub</title>
   <link rel="stylesheet" href="../assets/css/game-catalog.css">
   <style>
     /* Game-only styles. Colors inherit from game-catalog.css; change the accent and board colors here. */
     :root { --hub-accent: #8b7cff; --sq-l: #e6dffa; --sq-d: #8470c9; }
+    [hidden] { display: none !important; }
     .disabled-link { opacity: .45; cursor: not-allowed; pointer-events: none; }
 
     .chess { max-width: 700px; margin: 0 auto; }
@@ -44,6 +45,12 @@
     .pc.b { color: #15151c; text-shadow: 0 0 2px #fff, 0 0 1px #fff; }
     .pc.x { font-size: 9cqw; }
     .pc.x.w { color: #ffd54a; } .pc.x.b { color: #ff5252; text-shadow: 0 0 2px #000, 0 0 2px #000; }
+    .dc { position: relative; z-index: 1; width: 72%; aspect-ratio: 1; border-radius: 50%; pointer-events: none; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 .6cqw 0 rgba(0,0,0,.45), inset 0 0 0 .7cqw rgba(255,255,255,.16); }
+    .dc.r { background: radial-gradient(circle at 35% 30%, #ff7b7b, #c62828 70%); }
+    .dc.b { background: radial-gradient(circle at 35% 30%, #5b5b66, #121218 70%); }
+    .dc::after { content: ""; position: absolute; inset: 16%; border-radius: 50%; border: .5cqw solid rgba(255,255,255,.28); }
+    .dc.k::before { content: "\265B\FE0E"; position: relative; z-index: 1; font-size: 6.2cqw; line-height: 1; color: #ffd54a; text-shadow: 0 0 2px #000; }
     #rules { margin-top: 12px; font-size: .9rem; opacity: .85; line-height: 1.45; }
 
     .ov { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.6); z-index: 99999; }
@@ -53,6 +60,17 @@
     .win p { margin: 6px 0 16px; }
     .win .pcs { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
     .win .pcs button { font-size: 2.2rem; line-height: 1; padding: 6px 14px; background: #3a3a55; font-family: "Segoe UI Symbol","Noto Sans Symbols 2","Apple Symbols","DejaVu Sans",sans-serif; }
+    .back-link {
+      color: var(--accent-pink);
+      text-decoration: none;
+      font-size: 0.9rem;
+      align-self: flex-start;
+      margin-bottom: 5px;
+      display: inline-block;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -67,9 +85,14 @@
 
   <main class="container">
     <div class="chess">
+      <a href="./catalog.html" class="back-link">&larr; Back to Game Catalog</a>
       <div class="bar">
         <div class="grp">
-          <h1>Chess</h1>
+          <h1 id="title">Chess</h1>
+          <select id="game" aria-label="Game">
+            <option value="chess">Chess</option>
+            <option value="checkers">Checkers</option>
+          </select>
           <select id="mode" aria-label="Mode">
             <option value="classic">Classic</option>
             <option value="modded">Modded (nukes)</option>
@@ -106,6 +129,7 @@ var VAL = { P: 100, N: 320, B: 330, R: 500, Q: 900, K: 0, X: 300 };
 var N8 = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
 var KN = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
 var RULES = {
+  checkers: "American checkers. Pieces move one square diagonally forward onto dark squares. Jumping over an opponent’s piece captures it, and jumps are mandatory (chain them with the same piece). A piece that reaches the far row becomes a king and can move and jump both ways. You win when your opponent has no legal move. Click a piece, then click where it goes; for a multi-jump, click each landing square in turn.",
   classic: "Standard chess rules: castling, en passant, promotion, check, checkmate, stalemate, insufficient material and the 50-move rule. Click a piece, then click its destination.",
   modded: "Standard chess plus ☢ nukes. Each side has one Nuke (white on a4, black on h5). It steps one square in any direction onto an empty square and never gives check. Select it and click it again to detonate: every piece except kings in the 3×3 area is destroyed, including your own. Capturing an enemy nuke detonates it too, so the capturing piece is lost. Kings are immune to blasts. Detonating can break a check by destroying the attacker."
 };
@@ -280,7 +304,7 @@ function pickAI(s, ms) {
 }
 
 /* ---------- UI ---------- */
-var S, LM, hist = [], sel = null, flip = false, over = false, busy = false, boomTimer = null;
+var curGame = "chess", S, LM, hist = [], sel = null, flip = false, over = false, busy = false, boomTimer = null;
 var $ = function (i) { return document.getElementById(i); };
 var SQN = function (i) { return "abcdefgh"[i & 7] + (8 - (i >> 3)); };
 function modded() { return $("mode").value === "modded"; }
@@ -289,6 +313,9 @@ function glyph(p) { return '<span class="pc ' + p[0] + (p[1] === "X" ? " x" : ""
 
 function newGame() {
   clearTimeout(boomTimer);
+  curGame = $("game").value;
+  $("mode").hidden = curGame === "checkers"; $("title").textContent = curGame === "checkers" ? "Checkers" : "Chess";
+  if (curGame === "checkers") return ckNewGame();
   S = start(modded()); LM = legal(S); hist = []; sel = null; over = false; busy = false;
   $("over").classList.remove("show"); $("promo").classList.remove("show");
   $("rules").textContent = RULES[modded() ? "modded" : "classic"];
@@ -296,6 +323,7 @@ function newGame() {
   render();
 }
 function render() {
+  if (curGame === "checkers") return ckRender();
   var h = "", targets = {}, kingSq = -1, boomSet = {}, i, k;
   if (sel !== null) LM.forEach(function (m) { if (m.f === sel && m.t !== m.f) targets[m.t] = true; });
   if (inCheck(S.b, S.turn)) for (i = 0; i < 64; i++) if (S.b[i] === S.turn + "K") kingSq = i;
@@ -340,6 +368,7 @@ function play(m) {
   }
 }
 function click(s) {
+  if (curGame === "checkers") return ckClick(s);
   if (over || busy || (ai() && S.turn === "b")) return;
   var p = S.b[s];
   if (sel !== null) {
@@ -366,6 +395,7 @@ function click(s) {
   render();
 }
 function undo() {
+  if (curGame === "checkers") return ckUndo();
   if (!hist.length || busy) return;
   clearTimeout(boomTimer);
   S = hist.pop();
@@ -374,7 +404,167 @@ function undo() {
   $("over").classList.remove("show"); $("note").textContent = ""; render();
 }
 
+/* ---------- Checkers (American rules: forced jumps, multi-jumps, men jump forward only, flying kings not allowed) ---------- */
+var CK = null, CKLM = [], ckHist = [], ckSel = null, ckPre = [];
+var CKD = { r: [[-1, -1], [-1, 1]], b: [[1, -1], [1, 1]] }, CKALL = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+function ckStart() {
+  var b = [], r, c;
+  for (var i = 0; i < 64; i++) b.push(null);
+  for (r = 0; r < 8; r++) for (c = 0; c < 8; c++) if ((r + c) % 2) { if (r < 3) b[r * 8 + c] = "b"; else if (r > 4) b[r * 8 + c] = "r"; }
+  return { b: b, turn: "r", half: 0, last: null };
+}
+function ckJump(b, pos, me, king, path, caps, out) {
+  var r = pos >> 3, c = pos & 7, found = false, dirs = king ? CKALL : CKD[me];
+  for (var k = 0; k < dirs.length; k++) {
+    var mr = r + dirs[k][0], mc = c + dirs[k][1], lr = r + 2 * dirs[k][0], lc = c + 2 * dirs[k][1];
+    if (lr < 0 || lr > 7 || lc < 0 || lc > 7) continue;
+    var mid = mr * 8 + mc, land = lr * 8 + lc, mp = b[mid];
+    if (!mp || mp.toLowerCase() === me || caps.indexOf(mid) >= 0 || b[land]) continue;
+    found = true;
+    var nk = king || (me === "r" ? lr === 0 : lr === 7), np = path.concat(land), nc = caps.concat(mid);
+    if (!king && nk) out.push({ path: np, caps: nc });          // a man that reaches the far row is crowned and the turn ends
+    else ckJump(b, land, me, nk, np, nc, out);
+  }
+  if (!found && path.length > 1) out.push({ path: path, caps: caps });
+}
+function ckMoves(s) {
+  var me = s.turn, jumps = [], steps = [], i, k;
+  for (i = 0; i < 64; i++) {
+    var p = s.b[i]; if (!p || p.toLowerCase() !== me) continue;
+    var b2 = s.b.slice(); b2[i] = null;
+    ckJump(b2, i, me, p !== me, [i], [], jumps);
+  }
+  if (jumps.length) return jumps;                               // capturing is mandatory
+  for (i = 0; i < 64; i++) {
+    var q = s.b[i]; if (!q || q.toLowerCase() !== me) continue;
+    var dirs = q !== me ? CKALL : CKD[me], r = i >> 3, c = i & 7;
+    for (k = 0; k < dirs.length; k++) {
+      var nr = r + dirs[k][0], nc = c + dirs[k][1];
+      if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && !s.b[nr * 8 + nc]) steps.push({ path: [i, nr * 8 + nc], caps: [] });
+    }
+  }
+  return steps;
+}
+function ckApply(s, m) {
+  var b = s.b.slice(), from = m.path[0], to = m.path[m.path.length - 1], p = b[from], man = p === p.toLowerCase();
+  b[from] = null; m.caps.forEach(function (q) { b[q] = null; });
+  if (p === "r" && (to >> 3) === 0) p = "R"; else if (p === "b" && (to >> 3) === 7) p = "B";
+  b[to] = p;
+  return { b: b, turn: s.turn === "r" ? "b" : "r", half: (m.caps.length || man) ? 0 : s.half + 1, last: m.path };
+}
+function ckEval(s) {                                             // positive favors Red
+  var v = 0;
+  for (var i = 0; i < 64; i++) {
+    var p = s.b[i]; if (!p) continue;
+    var r = i >> 3, c = i & 7, red = p.toLowerCase() === "r", king = p !== p.toLowerCase();
+    var val = king ? 175 : 100 + (red ? 7 - r : r) * 4;
+    if (!king && (red ? r === 7 : r === 0)) val += 12;           // keep the back row
+    if (c >= 2 && c <= 5) val += 3;
+    v += red ? val : -val;
+  }
+  return v;
+}
+function ckNega(s, d, a, b) {
+  var ms = ckMoves(s);
+  if (!ms.length) return -100000 - d;
+  if (d === 0) return (s.turn === "r" ? 1 : -1) * ckEval(s);
+  ms.sort(function (x, y) { return y.caps.length - x.caps.length; });
+  var best = -1e9;
+  for (var i = 0; i < ms.length; i++) {
+    var v = -ckNega(ckApply(s, ms[i]), d - 1, -b, -a);
+    if (v > best) best = v;
+    if (best > a) a = best;
+    if (a >= b) break;
+  }
+  return best;
+}
+function ckPick(s, ms) {
+  ms = ms.slice().sort(function () { return Math.random() - 0.5; }).sort(function (x, y) { return y.caps.length - x.caps.length; });
+  var best = ms[0], bv = -1e9;
+  ms.forEach(function (m) { var v = -ckNega(ckApply(s, m), 6, -1e9, -bv); if (v > bv) { bv = v; best = m; } });
+  return best;
+}
+
+function ckNewGame() {
+  CK = ckStart(); CKLM = ckMoves(CK); ckHist = []; ckSel = null; ckPre = []; over = false; busy = false;
+  $("over").classList.remove("show"); $("note").textContent = "";
+  $("rules").textContent = RULES.checkers; ckRender();
+}
+function ckStarts(m, pre) {
+  if (m.path.length <= pre.length) return false;
+  for (var i = 0; i < pre.length; i++) if (m.path[i] !== pre[i]) return false;
+  return true;
+}
+function ckTargets() {
+  var out = {};
+  if (ckSel === null) return out;
+  CKLM.forEach(function (m) { if (ckStarts(m, ckPre)) out[m.path[ckPre.length]] = true; });
+  return out;
+}
+function ckRender() {
+  var h = "", tg = ckTargets(), pre = {}, last = {}, k, rc = 0, bc = 0;
+  ckPre.forEach(function (q) { pre[q] = 1; });
+  if (CK.last) CK.last.forEach(function (q) { last[q] = 1; });
+  for (k = 0; k < 64; k++) {
+    var s = flip ? 63 - k : k, p = CK.b[s], cls = "sq " + (((s >> 3) + (s & 7)) % 2 ? "d" : "l");
+    if (p) { if (p.toLowerCase() === "r") rc++; else bc++; }
+    if (last[s]) cls += " last";
+    if (pre[s]) cls += " sel";
+    if (tg[s]) cls += " tgt";
+    h += '<div class="' + cls + '" data-s="' + s + '" aria-label="' + SQN(s) + '">';
+    if ((k & 7) === 0) h += '<span class="co rk">' + (8 - (s >> 3)) + "</span>";
+    if (k >> 3 === 7) h += '<span class="co fl">' + "abcdefgh"[s & 7] + "</span>";
+    if (p) h += '<div class="dc ' + p.toLowerCase() + (p !== p.toLowerCase() ? " k" : "") + '"></div>';
+    h += "</div>";
+  }
+  $("board").innerHTML = h;
+  $("bUndo").disabled = !ckHist.length || busy;
+  if (!over) $("status").textContent = (CK.turn === "r" ? "Red" : "Black") + " to move" + (CKLM.length && CKLM[0].caps.length ? " — you must jump" : "") + "   (Red " + rc + " · Black " + bc + ")";
+}
+function ckEnd() {
+  var t = null, d = null;
+  if (!CKLM.length) { t = "Game over"; d = (CK.turn === "r" ? "Black" : "Red") + " wins. " + (CK.turn === "r" ? "Red" : "Black") + " has no moves left."; }
+  else if (CK.half >= 80) { t = "Draw"; d = "40 moves each without a capture or a man move."; }
+  if (t) { over = true; $("status").textContent = t + " — " + d; $("oT").textContent = t; $("oP").textContent = d; $("over").classList.add("show"); }
+}
+function ckPlay(m) {
+  ckHist.push(CK); CK = ckApply(CK, m); CKLM = ckMoves(CK); ckSel = null; ckPre = [];
+  $("note").textContent = m.caps.length ? "Captured " + m.caps.length + (m.caps.length > 1 ? " pieces." : " piece.") : "";
+  ckEnd(); ckRender();
+  if (!over && ai() && CK.turn === "b") {
+    busy = true; ckRender();
+    setTimeout(function () { busy = false; if (!over && ai() && CK.turn === "b") ckPlay(ckPick(CK, CKLM)); }, 350);
+  }
+}
+function ckClick(s) {
+  if (over || busy || (ai() && CK.turn === "b")) return;
+  var p = CK.b[s], tg = ckTargets();
+  if (ckSel !== null && tg[s]) {
+    ckPre.push(s);
+    var full = CKLM.filter(function (m) { return m.path.length === ckPre.length && ckStarts({ path: m.path.concat(-1) }, ckPre); })[0];
+    if (full) return ckPlay(full);
+    return ckRender();
+  }
+  if (ckPre.length > 1) { $("note").textContent = "Keep jumping with the same piece."; return; }
+  if (p && p.toLowerCase() === CK.turn && CKLM.some(function (m) { return m.path[0] === s; })) {
+    ckSel = s; ckPre = [s];
+    $("note").textContent = CKLM[0].caps.length ? "You must jump." : "";
+  } else {
+    if (p && p.toLowerCase() === CK.turn && CKLM[0] && CKLM[0].caps.length) $("note").textContent = "A jump is available, so you have to take it with another piece.";
+    ckSel = null; ckPre = [];
+  }
+  ckRender();
+}
+function ckUndo() {
+  if (!ckHist.length || busy) return;
+  CK = ckHist.pop();
+  if (ai()) while (CK.turn === "b" && ckHist.length) CK = ckHist.pop();
+  CKLM = ckMoves(CK); ckSel = null; ckPre = []; over = false;
+  $("over").classList.remove("show"); $("note").textContent = ""; ckRender();
+}
+
 $("board").addEventListener("click", function (e) { var q = e.target.closest(".sq"); if (q) click(+q.dataset.s); });
+$("game").addEventListener("change", newGame);
 $("mode").addEventListener("change", newGame);
 $("opp").addEventListener("change", newGame);
 $("bNew").addEventListener("click", newGame);

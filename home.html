@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Home | Celestial Hub</title>
-  <link rel="stylesheet" href="./assets/css/home.css">
+  <link id="main-style" rel="stylesheet" href="./assets/css/home.css">
 </head>
 <body>
 
@@ -108,6 +108,43 @@
         });
       }
     });
+
+    (() => {
+  let keyBuffer = "";
+  const styleLink = document.getElementById("main-style");
+  const defaultCSS = "./assets/css/home.css";
+  const brokenCSS = "./assets/css/efir-corrupt.css"; // Make sure you create this file in assets/css/!
+
+  function setLayout(isBroken) {
+    if (!styleLink) return;
+    styleLink.href = isBroken ? brokenCSS : defaultCSS;
+    document.body.classList.toggle("efir-active", isBroken);
+    sessionStorage.setItem("efir_mode", isBroken ? "1" : "0");
+  }
+
+  // Persist broken layout if already triggered in this tab
+  if (sessionStorage.getItem("efir_mode") === "1") {
+    setLayout(true);
+  }
+
+  document.addEventListener("keydown", (e) => {
+    // Ignore if the user is typing in an input or textarea
+    if (["INPUT", "TEXTAREA"].includes(e.target.tagName)) return;
+    if (e.key.length !== 1) return; // Ignore Shift, Ctrl, Alt, etc.
+
+    keyBuffer = (keyBuffer + e.key.toLowerCase()).slice(-15);
+
+    if (keyBuffer.endsWith("efir")) {
+      setLayout(true);
+      console.warn("%c[OVERRIDE]: Reality matrix destabilized.", "color: #ff0055; font-weight: bold;");
+      keyBuffer = "";
+    } else if (keyBuffer.endsWith("restore")) {
+      setLayout(false);
+      console.info("%c[SYSTEM]: Baseline layout restored.", "color: #00ffaa;");
+      keyBuffer = "";
+    }
+  });
+})();
   </script>
 
 </body>
