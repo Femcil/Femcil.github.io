@@ -58,7 +58,8 @@
     .he-seat.win { border-color: #ffd54a; }
     .he-seat.fold { opacity: .45; }
     .he-seat.out { opacity: .3; }
-    .he-name { font-weight: 700; }
+    .he-name { font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .he-name img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; border: 1px solid var(--hub-accent); background: #14141f; }
     .he-name em { font-style: normal; font-size: .7rem; margin-left: 6px; padding: 1px 6px; border-radius: 8px; background: var(--hub-accent); color: #fff; }
     .he-name em.ai { background: #c62840; }
     .he-stack { color: #ffd54a; font-weight: 700; margin: 2px 0 4px; }
@@ -97,7 +98,7 @@
   <nav class="navbar">
     <a href="../home.html" class="nav-brand">CELESTIAL</a>
     <div class="nav-links">
-      <a href="#account" class="disabled-link" aria-disabled="true" tabindex="-1">Account</a>
+      <a href="../account.html">Account</a>
       <a href="https://discord.gg/qXJ9h7DNfs" target="_blank" class="nav-discord">Discord</a>
     </div>
   </nav>
@@ -144,6 +145,28 @@
 
 <script>
 "use strict";
+/* ---------- Avatar Config ---------- */
+var POKER_AVATARS = {
+  defaultYou: "../assets/img/avatars/femcil-pfp.png",
+  Mei: "../assets/img/Mei.png",
+  Chen: "../assets/img/Chen.png",
+  Lan: "../assets/img/Lan.png",
+  Kai: "../assets/img/Kai.png",
+  ai: "../assets/img/avatars/ai-core.png"
+};
+
+function getYouProfile() {
+  try {
+    var saved = JSON.parse(localStorage.getItem("celestial_profile") || "{}");
+    return {
+      name: saved.name || "You",
+      avatar: saved.avatar ? (saved.avatar.startsWith("data:") || saved.avatar.startsWith("../") ? saved.avatar : "../" + saved.avatar) : POKER_AVATARS.defaultYou
+    };
+  } catch (e) {
+    return { name: "You", avatar: POKER_AVATARS.defaultYou };
+  }
+}
+
 var SU = ["♠","♥","♦","♣"], RK = ["","A","2","3","4","5","6","7","8","9","10","J","Q","K"];
 var TIP = {
   klondike: "Build down in alternating colors, send cards up to the foundations by suit. Click a card, then click where it goes. Double-click sends a card to a foundation.",
@@ -227,7 +250,7 @@ function canPick(n, i) {
   if (n[0] === "f") return mode === "klondike" && i === a.length - 1;
   return false;
 }
-function cap(destEmpty) {   // FreeCell: most cards movable at once
+function cap(destEmpty) {
   var fc = 0, ec = 0;
   for (var k in P) { if (k[0] === "c" && !P[k].length) fc++; if (k[0] === "t" && !P[k].length) ec++; }
   if (destEmpty) ec--;
@@ -247,7 +270,7 @@ function canDrop(sn, si, dn) {
   if (dn[0] === "c") return cs.length === 1 && !d.length;
   return false;
 }
-function checkRuns() {      // Spider: remove completed K..A same-suit runs
+function checkRuns() {
   for (var i = 0; i < 10; i++) {
     var a = P["t" + i];
     if (a.length >= 13) {
@@ -348,9 +371,9 @@ function findHint() {
         if ("tfc".indexOf(dn[0]) < 0 || !canDrop(sn, si, dn)) return;
         var d = P[dn], sc = 1;
         if (dn[0] === "c") { if (sn[0] !== "t" || si !== a.length - 1) return; sc = 0.5; }
-        if (sn[0] === "t" && si === 0 && !d.length) return;           // pointless column swap
+        if (sn[0] === "t" && si === 0 && !d.length) return;
         if (dn[0] === "f") sc += 5;
-        if (sn[0] === "t" && si > 0 && !a[si - 1].up) sc += 3;        // reveals a hidden card
+        if (sn[0] === "t" && si > 0 && !a[si - 1].up) sc += 3;
         if (sn === "waste" || sn[0] === "c") sc += 2;
         if (sc > bs || (sc === bs && Math.random() < 0.5)) { bs = sc; best = { cards: [[sn, si]], piles: [dn] }; }
       });
@@ -432,6 +455,7 @@ $("board").addEventListener("dblclick", function (e) {
   if (n === "stock" || n[0] === "f" || i !== P[n].length - 1) return;
   for (var k = 0; k < 4; k++) if (canDrop(n, i, "f" + k)) { sel = null; hint = null; doMove(n, i, "f" + k); finish(true); return; }
 });
+
 /* ---------- Texas Hold'em (no-limit, you vs 1-4 AI) ---------- */
 var HE = (function () {
   var NAMES = ["You", "Mei", "Chen", "Lan", "Kai"], RANKS = "23456789TJQKA";
@@ -440,10 +464,27 @@ var HE = (function () {
   var HNAMES = ["High card", "Pair", "Two pair", "Three of a kind", "Straight", "Flush", "Full house", "Four of a kind", "Straight flush"];
   var S = null, N = 4, gen = 0;
 
-  /* --- hand evaluation: cards are 0..51, rank = c % 13 (0 = deuce, 12 = ace), suit = floor(c / 13) --- */
+  function getYouProfile() {
+    try {
+      var saved = JSON.parse(localStorage.getItem("celestial_profile") || "{}");
+      return {
+        name: saved.name || "You",
+        avatar: saved.avatar ? (saved.avatar.startsWith("data:") || saved.avatar.startsWith("../") ? saved.avatar : "../" + saved.avatar) : POKER_AVATARS.defaultYou
+      };
+    } catch (e) {
+      return { name: "You", avatar: POKER_AVATARS.defaultYou };
+    }
+  }
+
+  function pfpFor(name) {
+    if (name === "You" || name === getYouProfile().name) return getYouProfile().avatar;
+    return POKER_AVATARS[name] || POKER_AVATARS.ai;
+  }
+
+  /* --- hand evaluation --- */
   function strHigh(mask) {
     for (var h = 12; h >= 4; h--) if (((mask >> (h - 4)) & 31) === 31) return h;
-    return (mask & 0x100F) === 0x100F ? 3 : -1;            // A-2-3-4-5
+    return (mask & 0x100F) === 0x100F ? 3 : -1;
   }
   function pack(a) { var v = 0; for (var k = 0; k < 5; k++) v = (v << 4) | (a[k] || 0); return v; }
   function eval7(c) {
@@ -486,6 +527,7 @@ var HE = (function () {
 
   function start() {
     gen++; N = +$("hePlayers").value;
+    NAMES[0] = getYouProfile().name;
     var p = [];
     for (var i = 0; i < N; i++) p.push({ name: NAMES[i], stack: 1000, hole: [], bet: 0, total: 0, folded: false, allIn: false, acted: false, out: false, shown: false, win: 0, txt: "", score: 0, aggr: 0.85 + Math.random() * 0.4 });
     S = { p: p, dealer: Math.floor(Math.random() * N), hand: 0, log: [], over: false, phase: "pre", board: [], pot: 0, cur: 0, currentBet: 0, minRaise: 20, bb: 20, sb: 10, result: "", hintTxt: "" };
@@ -496,6 +538,8 @@ var HE = (function () {
     var P = S.p;
     P.forEach(function (q) { if (q.stack <= 0) q.out = true; });
     var alive = P.filter(function (q) { return !q.out; });
+    NAMES[0] = getYouProfile().name;
+    P[0].name = NAMES[0];
     if (P[0].out) { S.over = true; S.result = "You’re out of chips. Press New game to play again."; draw(); return; }
     if (alive.length === 1) { S.over = true; S.result = "You busted the whole table. You win the match!"; draw(); return; }
     S.hand++;
@@ -509,7 +553,7 @@ var HE = (function () {
     var heads = alive.length === 2, sbI = heads ? S.dealer : nextAlive(S.dealer), bbI = nextAlive(sbI);
     commit(P[sbI], S.sb); commit(P[bbI], S.bb);
     S.currentBet = S.bb; S.minRaise = S.bb;
-    log("Hand " + S.hand + ": blinds " + money(S.sb) + "/" + money(S.bb) + ". " + P[S.dealer].name + (S.dealer === 0 ? " have" : " has") + " the button.");
+    log("Hand " + S.hand + ": blinds " + money(S.sb) + "/" + money(S.bb) + ". " + P[S.dealer].name + " has the button.");
     say("Hand " + S.hand + " — your cards are dealt.");
     step(bbI);
   }
@@ -539,15 +583,15 @@ var HE = (function () {
     else if (S.phase === "turn") { S.board.push(S.deck.pop()); S.phase = "river"; log("River dealt."); }
     else return showdown();
     draw();
-    if (can.length <= 1) { later(nextStreet, 1000); return; }     // everyone is all-in: run the board out
+    if (can.length <= 1) { later(nextStreet, 1000); return; }
     step(S.dealer);
   }
   function doAct(i, type, to) {
     var q = S.p[i], toCall = S.currentBet - q.bet;
-    if (type === "fold") { q.folded = true; log(q.name + (i === 0 ? " fold." : " folds.")); }
+    if (type === "fold") { q.folded = true; log(q.name + " folds."); }
     else if (type === "call") {
       var a = commit(q, toCall);
-      log(q.name + (toCall === 0 ? (i === 0 ? " check." : " checks.") : (i === 0 ? " call " : " calls ") + money(a) + (q.allIn ? " (all-in)." : ".")));
+      log(q.name + (toCall === 0 ? " checks." : " calls " + money(a) + (q.allIn ? " (all-in)." : ".")));
     } else {
       var max = q.stack + q.bet, wasBet = S.currentBet === 0;
       to = Math.max(Math.min(to, max), Math.min(minTo(), max));
@@ -558,7 +602,7 @@ var HE = (function () {
         S.currentBet = q.bet;
         S.p.forEach(function (o) { if (o !== q) o.acted = false; });
       }
-      log(q.name + (wasBet ? (i === 0 ? " bet " : " bets ") : (i === 0 ? " raise to " : " raises to ")) + money(q.bet) + (q.allIn ? " (all-in)." : "."));
+      log(q.name + (wasBet ? " bets " : " raises to ") + money(q.bet) + (q.allIn ? " (all-in)." : "."));
     }
     q.acted = true;
     step(i);
@@ -583,7 +627,7 @@ var HE = (function () {
   function winByFold(w) {
     var tot = S.pot; S.p.forEach(function (q) { tot += q.bet; q.bet = 0; }); S.pot = 0;
     w.stack += tot; w.win = tot; S.phase = "show";
-    S.result = w.name + (w.name === "You" ? " win " : " wins ") + money(tot) + " — everyone else folded.";
+    S.result = w.name + " wins " + money(tot) + " — everyone else folded.";
     log(S.result); say(S.result); draw();
   }
   function showdown() {
@@ -598,11 +642,11 @@ var HE = (function () {
       ws.forEach(function (q, k) { var g = share + (k === 0 ? rem : 0); q.stack += g; q.win += g; });
     });
     S.pot = 0; S.phase = "show";
-    S.result = P.filter(function (q) { return q.win > 0; }).map(function (q) { return q.name + (q.name === "You" ? " win " : " wins ") + money(q.win) + " with " + q.txt; }).join(" · ");
+    S.result = P.filter(function (q) { return q.win > 0; }).map(function (q) { return q.name + " wins " + money(q.win) + " with " + q.txt; }).join(" · ");
     log(S.result); say(S.result); draw();
   }
 
-  /* --- the AI: Monte Carlo equity against random hands, compared with pot odds --- */
+  /* --- AI & Hint logic --- */
   function equity(i, sims) {
     var q = S.p[i], opp = S.p.filter(function (o, j) { return j !== i && !o.out && !o.folded; }).length;
     var used = {}, rem = [], c, k, s, j, t;
@@ -632,7 +676,7 @@ var HE = (function () {
     if (toCall <= 0) {
       if (eq > 0.66 && Math.random() < 0.8 * noisy) return { type: "raise", to: clampRaise(q, S.currentBet + potNow * (eq > 0.82 ? 0.9 : 0.6)) };
       if (eq > 0.5 && Math.random() < 0.25 * noisy) return { type: "raise", to: clampRaise(q, potNow * 0.35) };
-      if (exactEq === undefined && Math.random() < 0.05 * q.aggr) return { type: "raise", to: clampRaise(q, potNow * 0.5) };   // the occasional bluff
+      if (exactEq === undefined && Math.random() < 0.05 * q.aggr) return { type: "raise", to: clampRaise(q, potNow * 0.5) };
       return { type: "call" };
     }
     if (toCall >= q.stack) return { type: eq > odds + 0.04 ? "call" : "fold" };
@@ -661,7 +705,13 @@ var HE = (function () {
     if (!q.out) cards = q.hole.map(function (c) { return cardH(i === 0 || q.shown ? c : null, "sm"); }).join("");
     var tags = (S.dealer === i ? "<em>D</em>" : "") + (q.allIn && !q.folded && !q.out ? '<em class="ai">ALL-IN</em>' : "");
     var info = q.out ? "out of chips" : (q.folded ? "folded" : (q.bet ? "bet " + money(q.bet) : "")) + (q.shown && !q.folded ? (q.bet ? " · " : "") + q.txt : "") + (q.win ? " · won " + money(q.win) : "");
-    return '<div class="' + cls + '"><div class="he-name">' + q.name + tags + '</div><div class="he-stack">' + money(q.stack) + '</div><div class="he-cards">' + cards + '</div><div class="he-bet">' + info + "</div></div>";
+    var pfp = pfpFor(q.name);
+
+    return '<div class="' + cls + '">' +
+      '<div class="he-name"><img src="' + pfp + '" alt="' + q.name + '">' + q.name + tags + '</div>' +
+      '<div class="he-stack">' + money(q.stack) + '</div>' +
+      '<div class="he-cards">' + cards + '</div>' +
+      '<div class="he-bet">' + info + "</div></div>";
   }
   function draw() {
     if (!S) return;

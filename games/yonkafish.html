@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Yonkagor Fishing Game | Celestial Hub</title>
-  <link rel="stylesheet" href="../../assets/css/game-catalog.css">
+  <link rel="stylesheet" href="../assets/css/game-catalog.css">
   <style>
     .game-container {
       display: flex;
@@ -87,7 +87,7 @@
 <body>
 
   <nav class="navbar">
-    <a href="../../home.html" class="nav-brand">CELESTIAL</a>
+    <a href="../home.html" class="nav-brand">CELESTIAL</a>
     <div class="nav-links">
       <!--<a href="#account" class="disabled-link">Account</a>-->
       <a href="https://discord.gg/qXJ9h7DNfs" target="_blank" class="nav-discord">Discord</a>
@@ -96,7 +96,7 @@
 
   <main class="container">
     <div class="game-container">
-      <a href="../catalog.html" class="back-link">&larr; Back to Game Catalog</a>
+      <a href="./catalog.html" class="back-link">&larr; Back to Game Catalog</a>
       <div class="game-stats">
         <div>Score: <span id="score">0</span> <button onclick="localStorage.removeItem('yonka_fish_score'); score=0; document.getElementById('score').textContent=0;" style="background:none; border:1px solid var(--border-color); color:var(--text-dim); padding:2px 6px; border-radius:4px; cursor:pointer; font-size:0.75rem; margin-left:8px;">Reset Data</button></div>
         <div id="status-text">Status: Press SPACE or CLICK to Cast!</div>

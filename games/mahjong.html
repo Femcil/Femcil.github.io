@@ -56,7 +56,8 @@
     #vsView { padding: 10px; border-radius: 12px; background: rgba(0,0,0,.28); border: 1px solid rgba(127,127,127,.35); }
     .vseat { padding: 8px 10px; margin-bottom: 8px; border-radius: 8px; background: rgba(127,127,127,.12); border: 2px solid transparent; }
     .vseat.act { border-color: var(--mj-accent); }
-    .vsh { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; font-size: .95rem; margin-bottom: 4px; }
+    .vsh { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: .95rem; margin-bottom: 4px; }
+    .vsh img.v-pfp { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; border: 2px solid var(--mj-accent); background: #14141f; }
     .vsh em { font-style: normal; font-size: .75rem; padding: 1px 8px; border-radius: 8px; background: var(--mj-accent); color: #fff; }
     .vsh .pts { margin-left: auto; font-weight: 700; }
     .vrow { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 2px; min-height: 6px; margin: 3px 0; }
@@ -91,7 +92,7 @@
   <nav class="navbar">
     <a href="../home.html" class="nav-brand">CELESTIAL</a>
     <div class="nav-links">
-      <a href="#account" class="disabled-link" aria-disabled="true" tabindex="-1">Account</a>
+      <a href="../account.html">Account</a>
       <a href="https://discord.gg/qXJ9h7DNfs" target="_blank" class="nav-discord">Discord</a>
     </div>
   </nav>
@@ -151,6 +152,27 @@
 
 <script>
 "use strict";
+/* ---------- Avatar Config ---------- */
+var MJ_AVATARS = {
+  defaultYou: "../assets/img/avatars/femcil-pfp.png",
+  Mie: "../assets/img/Mei.png",
+  Chen: "../assets/img/Chen.png",
+  Lan: "../assets/img/Lan.png",
+  ai: "../assets/img/avatars/ai-core.png"
+};
+
+function getYouProfile() {
+  try {
+    var saved = JSON.parse(localStorage.getItem("celestial_profile") || "{}");
+    return {
+      name: saved.name || "You",
+      avatar: saved.avatar ? (saved.avatar.startsWith("data:") || saved.avatar.startsWith("../") ? saved.avatar : "../" + saved.avatar) : MJ_AVATARS.defaultYou
+    };
+  } catch (e) {
+    return { name: "You", avatar: MJ_AVATARS.defaultYou };
+  }
+}
+
 var FONT = '"Noto Serif CJK SC","Source Han Serif SC","Songti SC","STSong","SimSun","Microsoft YaHei","PingFang SC",serif';
 
 /* ---------- Turtle layout (x,y in half-tile units; tile = 2x2) ---------- */
@@ -178,7 +200,6 @@ function allFaces() {
   for (n = 1; n <= 4; n++) { f.push({ k: "f" + n }); f.push({ k: "s" + n }); }
   return f; // 144
 }
-// Flowers match any flower, seasons match any season
 function mk(face) { var c = face.k[0]; return c === "f" ? "F" : c === "s" ? "S" : face.k; }
 
 var DOTS = {
@@ -249,7 +270,7 @@ function isFree(list, t) {
   for (var i = 0; i < list.length; i++) {
     var o = list[i];
     if (o === t) continue;
-    if (o.z > t.z && Math.abs(o.x - t.x) < 2 && Math.abs(o.y - t.y) < 2) return false; // covered
+    if (o.z > t.z && Math.abs(o.x - t.x) < 2 && Math.abs(o.y - t.y) < 2) return false;
     if (o.z === t.z && Math.abs(o.y - t.y) < 2) {
       if (o.x === t.x - 2) L = true;
       else if (o.x === t.x + 2) R = true;
@@ -260,7 +281,6 @@ function isFree(list, t) {
 function rnd(n) { return Math.floor(Math.random() * n); }
 function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = rnd(i + 1), x = a[i]; a[i] = a[j]; a[j] = x; } return a; }
 
-/* Deals faces by "un-playing" the board, so every deal is guaranteed solvable. */
 function generate(list, faces) {
   for (var attempt = 0; attempt < 400; attempt++) {
     var rem = list.slice(), pool = shuffle(faces.slice()), plan = [], ok = true;
@@ -397,7 +417,7 @@ function reshuffle() {
   var act = active();
   if (!act.length) return;
   var faces = act.map(function (t) { return t.face; });
-  if (!generate(act, faces)) {            // extremely rare fallback
+  if (!generate(act, faces)) {
     for (var n = 0; n < 200; n++) {
       shuffle(faces); act.forEach(function (t, i) { t.face = faces[i]; });
       if (findPairs().length) break;
@@ -441,9 +461,10 @@ window.addEventListener("keydown", function (e) {
   else if (e.key === "s" || e.key === "S") reshuffle();
   else if (e.key === "n" || e.key === "N") newGame();
 });
+
 /* ---------- Mahjong vs AI ---------- */
 var VS = (function () {
-  var WC = ["東","南","西","北"], NAMES = ["You","Mei","Chen","Lan"], TN = ["Characters","Dots","Bamboo"];
+  var WC = ["東","南","西","北"], NAMES = ["You","Mie","Chen","Lan"], TN = ["Characters","Dots","Bamboo"];
   var G = null, N = 4, gen = 0;
   function asc(a, b) { return a - b; }
   function key(t) { return t < 9 ? "c" + (t + 1) : t < 18 ? "d" + (t - 8) : t < 27 ? "b" + (t - 17) : t < 31 ? "w" + (t - 26) : "r" + (t - 30); }
@@ -452,7 +473,8 @@ var VS = (function () {
     if (t < 31) return ["East","South","West","North"][t - 27] + " wind";
     return ["Red","Green","White"][t - 31] + " dragon";
   }
-  function nm(p) { return p === 0 ? "You" : NAMES[p] + " (AI)"; }
+  function nm(p) { return p === 0 ? getYouProfile().name : NAMES[p] + " (AI)"; }
+  function pfpFor(p) { return p === 0 ? getYouProfile().avatar : (MJ_AVATARS[NAMES[p]] || MJ_AVATARS.ai); }
   function counts(h) { var c = [], i; for (i = 0; i < 34; i++) c.push(0); h.forEach(function (t) { c[t]++; }); return c; }
   function later(fn, ms) { var g = gen; setTimeout(function () { if (g === gen) fn(); }, ms); }
   function say(s) { $("msg").textContent = s; }
@@ -656,7 +678,9 @@ var VS = (function () {
   function tile(t, cls, extra) { return '<div class="mt ' + cls + '"' + (extra || "") + ">" + faceSVG(key(t)) + "</div>"; }
   function melds(ms) { return ms.map(function (m) { return '<div class="vml">' + m.t.map(function (t) { return tile(t, "sm"); }).join("") + "</div>"; }).join(""); }
   function head(p) {
-    return '<div class="vsh"><b>' + nm(p) + "</b><span>" + WC[(p - G.dealer + N) % N] + "</span>" + (p === G.dealer ? "<em>dealer</em>" : "") +
+    return '<div class="vsh">' +
+      '<img class="v-pfp" src="' + pfpFor(p) + '" alt="' + nm(p) + '">' +
+      '<b>' + nm(p) + "</b><span>" + WC[(p - G.dealer + N) % N] + "</span>" + (p === G.dealer ? "<em>dealer</em>" : "") +
       '<span class="pts">' + G.scores[p] + " pts</span></div>";
   }
   function river(p) { return '<div class="vrow">' + G.discards[p].map(function (t) { return tile(t, "sm"); }).join("") + "</div>"; }

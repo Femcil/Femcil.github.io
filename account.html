@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account Portal | Celestial Hub</title>
+  <link rel="stylesheet" href="assets/css/wiki.css">
+  <style>
+    :root {
+      --bg-dark: #0d101b;
+      --card-bg: #141627;
+      --border-color: #272a48;
+      --accent-pink: #ff7bb0;
+      --text-main: #eef0ff;
+      --text-dim: #9496b8;
+    }
+    body { background: var(--bg-dark); color: var(--text-main); font-family: system-ui, -apple-system, sans-serif; margin: 0; }
+    .disabled-link { opacity: .5; cursor: not-allowed; pointer-events: none; }
+    .wrap { max-width: 760px; margin: 28px auto; padding: 0 16px 40px; }
+    .back-link { color: var(--accent-pink); text-decoration: none; font-size: .9rem; display: inline-block; margin-bottom: 14px; }
+    .back-link:hover { text-decoration: underline; }
+
+    /* Neon Pink Local-Only Warning Banner */
+    .local-warning {
+      background: rgba(255, 123, 176, 0.08);
+      border: 2px solid var(--accent-pink);
+      box-shadow: 0 0 16px rgba(255, 123, 176, 0.22);
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-bottom: 20px;
+      font-size: .9rem;
+      line-height: 1.5;
+    }
+    .local-warning strong { color: var(--accent-pink); text-transform: uppercase; letter-spacing: .04em; display: block; margin-bottom: 4px; }
+
+    /* Portal Card */
+    .portal-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 24px;
+    }
+    .portal-header { display: flex; align-items: center; gap: 18px; margin-bottom: 24px; flex-wrap: wrap; }
+    .avatar-preview {
+      width: 88px; height: 88px; border-radius: 50%; object-fit: cover;
+      border: 3px solid var(--accent-pink); background: #090b14;
+    }
+    .field { margin-bottom: 18px; }
+    .field label { display: block; font-size: .82rem; font-weight: 700; color: var(--text-dim); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em; }
+    .field input[type="text"] {
+      width: 100%; max-width: 340px; box-sizing: border-box;
+      padding: 9px 12px; border-radius: 8px;
+      background: #0d101b; border: 1px solid var(--border-color); color: var(--text-main); font: inherit;
+    }
+    .field input[type="text"]:focus { outline: none; border-color: var(--accent-pink); }
+
+    /* Default Avatars Grid */
+    .avatar-grid { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .av-choice {
+      width: 52px; height: 52px; border-radius: 50%; padding: 0; overflow: hidden;
+      border: 2px solid var(--border-color); background: #0d101b; cursor: pointer; transition: transform .12s, border-color .12s;
+    }
+    .av-choice:hover { transform: scale(1.06); }
+    .av-choice.active { border-color: var(--accent-pink); box-shadow: 0 0 10px rgba(255, 123, 176, 0.5); }
+    .av-choice img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    /* Buttons */
+    .btn {
+      padding: 9px 16px; border-radius: 8px; font: inherit; font-size: .9rem; font-weight: 700;
+      cursor: pointer; border: 1px solid var(--border-color); background: #1d213a; color: var(--text-main);
+    }
+    .btn:hover { background: #282d4d; }
+    .btn-pink { background: var(--accent-pink); color: #111; border-color: var(--accent-pink); }
+    .btn-pink:hover { filter: brightness(1.08); }
+    .btn-discord { opacity: .45; cursor: not-allowed; display: inline-flex; align-items: center; gap: 8px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border-color); }
+    .status-msg { font-size: .85rem; color: #6fdc8c; margin-left: auto; align-self: center; opacity: 0; transition: opacity .2s; }
+    .status-msg.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-left">
+      <a href="home.html" class="nav-brand">CELESTIAL</a>
+    </div>
+    <div class="nav-links">
+      <a href="account.html">Account</a>
+      <a href="https://discord.gg/qXJ9h7DNfs" target="_blank" class="nav-discord">Discord</a>
+    </div>
+  </nav>
+
+  <main class="wrap">
+    <a class="back-link" href="home.html">&larr; Back to Hub</a>
+
+    <div class="local-warning" role="alert">
+      <strong>Local Storage Notice</strong>
+      Everything on this page is stored strictly in your browser's local storage—no data is sent to a server. Clearing your browser data will reset your profile, and Discord account linking is currently disabled.
+    </div>
+
+    <div class="portal-card">
+      <div class="portal-header">
+        <img id="avPreview" class="avatar-preview" src="assets/img/avatar-default.png" alt="Current Avatar">
+        <div>
+          <h1 style="margin: 0 0 4px; font-size: 1.45rem;" id="displayTitle">Guest Explorer</h1>
+          <span style="font-size: .85rem; color: var(--text-dim);">Local Celestial Profile</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="userName">Display Name</label>
+        <input type="text" id="userName" maxlength="24" placeholder="Enter a handle...">
+      </div>
+
+      <div class="field">
+        <label>Choose Default Avatar</label>
+        <div class="avatar-grid" id="defaultGrid"></div>
+      </div>
+
+      <div class="field">
+        <label for="avUpload">Or Upload Custom Image (Auto-resized)</label>
+        <input type="file" id="avUpload" accept="image/*" style="font-size: .85rem; color: var(--text-dim);">
+      </div>
+
+      <div class="field">
+        <label>External Connections</label>
+        <button class="btn btn-discord" disabled title="Discord OAuth is disabled on static hosting">
+          Link Discord Account (Disabled)
+        </button>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-pink" id="saveBtn">Save Profile</button>
+        <button class="btn" id="resetBtn">Reset Local Data</button>
+        <span class="status-msg" id="statusMsg">Saved locally!</span>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    "use strict";
+    // Swap these paths to match your actual default character icons
+    const DEFAULTS = [
+      'assets/img/femcil-pfp.png',
+      'assets/img/heila.png',
+      'assets/img/midnight.png',
+      'assets/img/strautiner.png'
+    ];
+
+    const STORAGE_KEY = 'celestial_profile';
+    const avPreview = document.getElementById('avPreview');
+    const userNameInput = document.getElementById('userName');
+    const displayTitle = document.getElementById('displayTitle');
+    const defaultGrid = document.getElementById('defaultGrid');
+    const statusMsg = document.getElementById('statusMsg');
+
+    let currentAvatar = DEFAULTS[0];
+
+    function loadProfile() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        if (saved.name) {
+          userNameInput.value = saved.name;
+          displayTitle.textContent = saved.name;
+        }
+        if (saved.avatar) currentAvatar = saved.avatar;
+      } catch (e) {}
+      avPreview.src = currentAvatar;
+      renderDefaults();
+    }
+
+    function renderDefaults() {
+      defaultGrid.innerHTML = '';
+      DEFAULTS.forEach(src => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'av-choice' + (currentAvatar === src ? ' active' : '');
+        btn.innerHTML = `<img src="${src}" alt="Default avatar">`;
+        btn.addEventListener('click', () => {
+          currentAvatar = src;
+          avPreview.src = src;
+          renderDefaults();
+        });
+        defaultGrid.appendChild(btn);
+      });
+    }
+
+    // Resize uploaded image to 160x160 so it never overflows localStorage
+    document.getElementById('avUpload').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = 160;
+          canvas.height = 160;
+          const ctx = canvas.getContext('2d');
+          // Center-crop square
+          const min = Math.min(img.width, img.height);
+          const sx = (img.width - min) / 2;
+          const sy = (img.height - min) / 2;
+          ctx.drawImage(img, sx, sy, min, min, 0, 0, 160, 160);
+          currentAvatar = canvas.toDataURL('image/webp', 0.85);
+          avPreview.src = currentAvatar;
+          renderDefaults();
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    document.getElementById('saveBtn').addEventListener('click', () => {
+      const name = userNameInput.value.trim() || 'Guest Explorer';
+      displayTitle.textContent = name;
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ name, avatar: currentAvatar }));
+        statusMsg.classList.add('show');
+        setTimeout(() => statusMsg.classList.remove('show'), 2000);
+      } catch (e) {
+        alert('Image too large for browser storage. Try a smaller file!');
+      }
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      localStorage.removeItem(STORAGE_KEY);
+      userNameInput.value = '';
+      displayTitle.textContent = 'Guest Explorer';
+      currentAvatar = DEFAULTS[0];
+      avPreview.src = currentAvatar;
+      renderDefaults();
+    });
+
+    loadProfile();
+  </script>
+</body>
+</html>
