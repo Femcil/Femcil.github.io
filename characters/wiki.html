@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Wiki | Celestial Hub</title>
   <link rel="stylesheet" href="../assets/css/wiki.css">
+  <style>
+    /* Hub Navigation Enhancements */
+    .nav-links { display: flex; align-items: center; gap: 16px; }
+    .nav-map-btn { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 6px; background: rgba(255,123,176,0.15); border: 1px solid var(--accent-pink, #ff7bb0); color: var(--accent-pink, #ff7bb0); text-decoration: none; font-weight: 600; font-size: .88rem; transition: background .2s; }
+    .nav-map-btn:hover { background: rgba(255,123,176,0.3); }
+    .wiki-map-callout { display: inline-flex; align-items: center; gap: 8px; margin: 12px 0; padding: 8px 14px; border-radius: 8px; background: rgba(79, 163, 217, 0.12); border: 1px solid rgba(79, 163, 217, 0.4); color: #73c2fb; text-decoration: none; font-weight: 600; font-size: .9rem; transition: background .2s; }
+    .wiki-map-callout:hover { background: rgba(79, 163, 217, 0.22); }
+  </style>
 </head>
 <body>
   <!-- Navigation -->
@@ -19,6 +27,7 @@
       <a href="../home.html" class="nav-brand">CELESTIAL</a>
     </div>
     <div class="nav-links">
+      <a href="map.html" class="nav-map-btn">&🗺️ Open Trappist Atlas</a>
       <!--<a href="#account" class="disabled-link">Account</a>-->
       <a href="https://discord.gg/qXJ9h7DNfs" target="_blank" class="nav-discord">Discord</a>
     </div>
@@ -32,14 +41,6 @@
     <!-- Sidebar Navigation -->
     <aside class="wiki-sidebar" id="wikiSidebar">
 
-      <!--<div class="wiki-profile">
-        <img src="YOUR_PFP_IMAGE_URL_OR_PATH" alt="Profile" class="wiki-pfp">
-        <div class="wiki-profile-info">
-          <h4>Femcil</h4>
-          <span>Lore Archivist</span>
-        </div>
-      </div>-->
-
       <h3>Protogenia Lore</h3>
       <ul class="wiki-nav-list">
         <li><a href="#story" class="wiki-tab active-wiki-link" data-target="story">Story</a></li>
@@ -49,7 +50,6 @@
         <li><a href="#javaberus" class="wiki-tab" data-target="javaberus">Javaberus</a></li>
         <li><a href="#strautiner" class="wiki-tab" data-target="strautiner">Strautiner</a></li>
         <li><a href="#plantogen" class="wiki-tab" data-target="plantogen">Plantogen</a></li>
-        <li><a href="#femcil" class="wiki-tab" data-target="femcil">Femcil</a></li>
         <li><a href="#cream" class="wiki-tab" data-target="cream">Cream</a></li>
         <li><a href="#the_decay" class="wiki-tab" data-target="the_decay">The Decay</a></li>
         <li><a href="#protogen_cafe" class="wiki-tab" data-target="protogen_cafe">Protogen Cafe</a></li>
@@ -90,6 +90,7 @@
             Over years they made full warehouses full of protogens. They replaced jobs, which many of the lower class humans were angry about. They were even used for the massive contruction project needed to put a barrier between an Island and Protogenia to prevent floods from tides.
             CONTINUING LATER...
           </p>
+          <a href="map.html" class="wiki-map-callout">📍 Explore these locations on the Trappist 1d Atlas</a>
         </div>
       </article>
       <!-- ARTICLE 2: Heila -->
@@ -392,7 +393,7 @@
           </div>
         </div>
       </article>
-      <!-- ARTICLE 14: Plantogen -->
+      <!-- ARTICLE 14: Trappist System -->
       <article id="trappist" class="wiki-article">
         <div class="wiki-header">
           <span class="card-tag">Setting / Planets</span>
@@ -403,6 +404,7 @@
           <p>
             The setting of <a href="#story" class="wiki-link inline-tab" data-target="story">the story</a>. 1b and 1c are barin. 1d has life. 1e has life. I haven't drawn anything official for 1f, 1g, and 1h. 
           </p>
+          <a href="map.html" class="wiki-map-callout">🗺️ Open Interactive Trappist 1d Atlas & System View</a>
           <!-- Scroll-Through Image Port -->
           <h3>Concept Art & Gallery</h3>
           <div class="wiki-image-gallery">
